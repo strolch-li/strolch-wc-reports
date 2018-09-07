@@ -1,0 +1,302 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<link rel="import" href="../iron-collapse/iron-collapse.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+<link rel="import" href="../paper-card/paper-card.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-listbox/paper-listbox.html">
+<link rel="import" href="../paper-ripple/paper-ripple.html">
+<link rel="import" href="../paper-tooltip/paper-tooltip.html">
+<link rel="import" href="../strolch-wc-debounced-input/strolch-wc-debounced-input.html">
+
+<link rel="import" href="../strolch-wc-badge/strolch-wc-badge.html">
+<link rel="import" href="../strolch-wc-localize-behavior/strolch-wc-localize-behavior.html">
+
+<link rel="import" href="strolch-wc-reports-behavior.html">
+
+<dom-module id="strolch-wc-reports-facet">
+    <template>
+
+        <!-- Style -->
+        <style is="custom-style" include="strolch-wc-styles">
+            :host {
+                display: block;
+            }
+
+            paper-card {
+                width: 100%;
+            }
+
+            paper-card .card-actions {
+                padding-left: 0;
+                padding-right: 0;
+            }
+
+            .headline {
+                @apply(--layout-horizontal);
+                @apply(--layout-center);
+
+                width: 100%;
+                padding: 12px;
+                box-sizing: border-box;
+                cursor: pointer;
+                position: relative;
+            }
+
+            .headline > * {
+                display: inline-block;
+                font-size: 16px;
+            }
+
+            .headline > :last-child {
+                margin-left: auto;
+            }
+
+            .badge-wrapper {
+                width: 12px;
+                height: 12px;
+                padding-left: 6px;
+                padding-top: 6px;
+            }
+
+            .badge-wrapper > strolch-wc-badge {
+                z-index: 0;
+            }
+
+            strolch-wc-debounced-input {
+                --focus-color: var(--google-grey-700);
+                margin: 0 12px;
+            }
+
+            #fieldList > .field:not(:first-child) {
+                margin-top: 8px;
+            }
+
+            #fieldList > .field {
+                padding: 0 16px;
+                min-height: 40px;
+                cursor: pointer;
+
+                --paper-item: {
+                    background-color: var(--google-grey-100);
+                };
+                --paper-item-selected: {
+                    background-color: var(--paper-indigo-400);
+                    color: white;
+                };
+                --paper-item-focused-before: {
+                    background-color: unset;
+                };
+            }
+
+            .field {
+                @apply(--layout-horizontal);
+            }
+
+            .field:not(.iron-selected):hover {
+                background-color: var(--paper-indigo-50);
+                color: black;
+            }
+
+            .field-count {
+                padding: 8px;
+            }
+
+            .field-name {
+                font-size: 14px;
+                line-height: 18px;
+                text-overflow: ellipsis;
+                overflow: hidden;
+                width: 100%;
+                white-space: nowrap;
+                cursor: pointer;
+                user-select: none;
+            }
+
+            .field.iron-selected > .field-count {
+                background-color: var(--paper-indigo-300);
+                color: white;
+            }
+
+            .field-count {
+                @apply(--layout-horizontal);
+                @apply(--layout-center);
+                margin-left: auto;
+                min-width: 30px;
+                font-size: 12px;
+                background-color: #ededed;
+                color: black;
+            }
+
+            .field-count > div {
+                margin: 0 auto;
+            }
+
+            paper-listbox paper-item {
+                height: 1px;
+            }
+        </style>
+
+        <!-- Requests -->
+        <iron-ajax id="ajaxGetFields"
+                   url="[[baseRestPath]]/strolch/reports/[[reportId]]/facets/[[facetId]]/fields"
+                   content-type="application/json"
+                   handle-as="json"
+                   method="GET"
+                   on-response="onPostFieldResponse"
+                   on-error="onAjaxError"></iron-ajax>
+
+        <!-- Content -->
+        <paper-card>
+            <div class="headline" on-tap="toggleListCollapse">
+                <div>
+                    [[localize(facetId)]]
+                </div>
+                <div class="badge-wrapper">
+                    <strolch-wc-badge hide="[[lesserEqual(filters.length, 0)]]"
+                                      label="[[filters.length]]"></strolch-wc-badge>
+                </div>
+                <paper-ripple></paper-ripple>
+                <iron-icon icon="[[headlineIcon]]"></iron-icon>
+            </div>
+            <iron-collapse id="listCollapse" opened="{{listOpened}}">
+                <div class="card-actions">
+
+                    <strolch-wc-debounced-input id="debouncedInput"
+                                          debounced-input="{{searchTerm}}"
+                                          disabled="[[arrayFilled(filters)]]"></strolch-wc-debounced-input>
+
+                    <paper-listbox id="fieldList" attr-for-selected="field-id" multi>
+                        <template is="dom-repeat" items="[[fields]]" as="field">
+                            <paper-item id="field[[index]]"
+                                        class="field"
+                                        field-id="[[field.id]]"
+                                        on-tap="onItemsTapped">
+                                <div class="field-name">
+                                    [[field.name]]
+                                </div>
+                                <template is="dom-if" if="[[field.count]]">
+                                    <div class="field-count">
+                                        <div>[[field.count]]</div>
+                                    </div>
+                                </template>
+                            </paper-item>
+                            <paper-tooltip for="field[[index]]" position="top" offset="4">
+                                [[field.name]]
+                            </paper-tooltip>
+                        </template>
+                    </paper-listbox>
+                </div>
+            </iron-collapse>
+        </paper-card>
+    </template>
+
+    <script>
+        Polymer({
+
+            /* Component */
+            is: "strolch-wc-reports-facet",
+            behaviors: [
+                StrolchLocalizeBehavior,
+                StrolchReportsBehavior
+            ],
+
+            /* Properties */
+            properties: {
+                headlineIcon: {
+                    type: String,
+                    computed: "computeHeadlineIcon(listOpened)"
+                },
+                headlineIconCollapse: {
+                    type: String,
+                    value: "expand-less"
+                },
+                headlineIconExpand: {
+                    type: String,
+                    value: "expand-more"
+                },
+                listOpened: {
+                    type: Boolean,
+                    value: false
+                },
+                searchTerm: {
+                    type: String,
+                    value: "",
+                    observer: "searchTermChanged"
+                },
+                fields: {
+                    type: Array,
+                    value: []
+                },
+                filters: {
+                    type: Array,
+                    value: [],
+                    notify: true
+                },
+                filter: {
+                    type: Array,
+                    value: []
+                }
+            },
+
+            /* Computations */
+            computeHeadlineIcon: function (listOpened) {
+                return listOpened ? this.headlineIconCollapse : this.headlineIconExpand;
+            },
+
+            /* Observers */
+            searchTermChanged: function (newValue, oldValue) {
+                if (newValue != null && oldValue != null) {
+                    this.$.ajaxGetFields.params = {
+                        query: newValue,
+                        limit: Susi.Constants.limit
+                    };
+                    this.$.ajaxGetFields.generateRequest();
+                }
+            },
+
+            /* Listeners */
+            listeners: {},
+            onPostFieldResponse: function (event) {
+                // get the response
+                var response = event.detail.response;
+
+                // directly set this as the available types
+                this.set("fields", response.data);
+            },
+            onItemsTapped: function (event) {
+                // get the tapped filter
+                var tappedFilter = event.currentTarget.fieldId;
+
+                // get all filters that are already selected
+                var selectedItems = this.$.fieldList.selectedItems;
+                var filters = [];
+                for (var i in selectedItems) {
+                    filters.push(selectedItems[i].fieldId);
+                }
+
+                // if the tapped filter is in the array it must be removed, if not added
+                var filterIndex = filters.findIndex(function (filter) {
+                    return filter == tappedFilter
+                });
+                if (filterIndex >= 0) {
+                    filters.splice(filterIndex, 1);
+                }
+                else {
+                    filters.push(tappedFilter);
+                }
+
+                // update the filters
+                this.set("filters", filters);
+            },
+
+            /* Private */
+
+            /* Public */
+            toggleListCollapse: function () {
+                this.$.listCollapse.toggle();
+            }
+        });
+    </script>
+</dom-module>

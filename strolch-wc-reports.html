@@ -1,0 +1,445 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-listbox/paper-listbox.html">
+<link rel="import" href="../paper-material/paper-material.html">
+<link rel="import" href="../paper-tooltip/paper-tooltip.html">
+<link rel="import" href="../vaadin-date-picker/vaadin-date-picker.html">
+
+<link rel="import" href="../strolch-wc-localize-behavior/strolch-wc-localize-behavior.html">
+
+<link rel="import" href="strolch-wc-reports-behavior.html">
+<link rel="import" href="strolch-wc-reports-facet.html">
+<link rel="import" href="strolch-wc-reports-table.html">
+
+<dom-module id="strolch-wc-reports">
+    <template>
+
+        <!-- Style -->
+        <style is="custom-style" include="strolch-wc-styles">
+            @media print {
+                .noprint {
+                    display: none
+                }
+            }
+
+            @media screen {
+                :host {
+                    --box-space: 12px;
+                }
+
+                .content {
+                    @apply(--layout-vertical);
+                    height: calc(100vh - var(--app-header-height) - (2 * var(--app-pages-content-padding)));
+                    padding: var(--app-pages-content-padding);
+                }
+
+                .row {
+                    @apply(--layout-horizontal);
+                }
+
+                .row:not(:first-of-type) {
+                    padding-top: var(--box-space);
+                }
+
+                .row.fill-parent {
+                    height: 100%;
+                }
+
+                .row.no-shrink {
+                    flex-shrink: 0;
+                }
+
+                #targetContainer {
+                    @apply(--layout-horizontal);
+                    width: 100%;
+                    min-height: 58px;
+                    padding: 0 12px;
+                    background-color: white;
+                }
+
+                #targetContainer > paper-dropdown-menu {
+                    margin-right: auto;
+                }
+
+                #targetContainer > paper-dropdown-menu,
+                #dateContainer {
+                    @apply(--layout-horizontal);
+                    @apply(--layout-end);
+                }
+
+                #targetContainer > paper-dropdown-menu,
+                #dateContainer > vaadin-date-picker {
+                    height: 100%;
+
+                    --paper-input-container-color: var(--google-grey-500);
+                    --paper-input-container-focus-color: var(--google-grey-700);
+                    --paper-input-container-input-color: var(--google-grey-700);
+                    --paper-input-container: {
+                        position: relative;
+                        padding: 0;
+                        margin-top: 4px;
+                        margin-bottom: 8px;
+                    };
+                    --paper-input-container-underline-disabled: {
+                        border-bottom-style: solid;
+                    };
+                }
+
+                #buttonContainer {
+                    @apply(--layout-horizontal);
+                    @apply(--layout-center-justified);
+                    margin: auto 0 auto auto;
+                }
+
+                #buttonContainer > * {
+                    height: 40px;
+                    align-self: center;
+                }
+
+                #dateContainer {
+                    margin: 0 auto;
+                }
+
+                #facetContainer {
+                    @apply(--layout-flex);
+                    margin-right: calc(var(--box-space) * 0.5);
+                    overflow-x: visible;
+                    overflow-y: scroll;
+                }
+
+                #facetContainer > strolch-wc-reports-facet:not(:last-of-type) {
+                    margin-bottom: 16px;
+                }
+
+                #tableContainer {
+                    @apply(--layout-flex-3);
+                    margin-left: calc(var(--box-space) * 0.5);
+                    overflow-x: visible;
+                    overflow-y: scroll;
+                }
+
+                .light-border {
+                    border-style: solid;
+                    border-width: 0.5px;
+                    border-color: var(--google-grey-300);
+                    box-sizing: border-box;
+                }
+
+                paper-dropdown-menu paper-item {
+                    height: 1px;
+                }
+
+                #dateContainer > vaadin-date-picker:first-of-type {
+                    margin-left: 6%;
+                    margin-right: 2%;
+                }
+
+                #dateContainer > vaadin-date-picker:last-of-type {
+                    margin-left: 2%;
+                    margin-right: 6%;
+                }
+
+                vaadin-date-picker {
+                    --vaadin-date-picker-yearscroller: {
+                        color: var(--app-dark-highlight-fg-color);
+                        background-color: var(--app-dark-highlight-bg-color);
+                        overflow: initial;
+                    };
+                    --vaadin-date-picker-calendar-cell-selected: {
+                        color: var(--app-regular-highlight-fg-color);
+                        background-color: var(--app-regular-highlight-bg-color);
+                        border-radius: 2px;
+                    };
+                    --vaadin-date-picker-calendar-cell-focused: {
+                        color: var(--app-dark-highlight-fg-color);
+                        background-color: var(--app-dark-highlight-bg-color);
+                    };
+                    --vaadin-date-picker-calendar-cell-today: {
+                        color: unset;
+                        background-color: unset;
+                        font-weight: bold;
+                    };
+                    --vaadin-date-picker-footer: {
+                        color: var(--google-grey-700);
+                    };
+                }
+            }
+        </style>
+
+        <!-- Requests -->
+        <iron-ajax auto
+                   url="[[baseRestPath]]/strolch/reports"
+                   content-type="application/json"
+                   handle-as="json"
+                   method="GET"
+                   on-response="onGetReportResponse"
+                   on-error="onAjaxError"></iron-ajax>
+        <iron-ajax id="ajaxGetFacets"
+                   url="[[baseRestPath]]/strolch/reports/[[reportId]]/facets"
+                   content-type="application/json"
+                   handle-as="json"
+                   method="GET"
+                   on-response="onGetFacetResponse"
+                   on-error="onAjaxError"></iron-ajax>
+        <iron-ajax id="ajaxPostCsv"
+                   url="[[baseRestPath]]/strolch/reports/[[reportId]]/csv"
+                   content-type="application/json"
+                   handle-as="text"
+                   method="POST"
+                   on-response="onPostCsvResponse"
+                   on-error="onAjaxError"></iron-ajax>
+
+        <!-- Content -->
+        <div class="content">
+            <div class="row no-shrink noprint">
+                <paper-material id="targetContainer">
+
+                    <paper-dropdown-menu label="[[localize('reportType')]]">
+                        <paper-listbox class="dropdown-content"
+                                       selected="{{selectedReportIndex}}"
+                                       on-iron-select="onReportSelected">
+                            <template is="dom-repeat" items="[[reports]]" as="report">
+                                <paper-item class="dropdown-item">[[localize(report.name)]]</paper-item>
+                            </template>
+                        </paper-listbox>
+                    </paper-dropdown-menu>
+
+                    <template is="dom-if" if="[[reportId]]">
+                        <div id="dateContainer">
+
+                            <vaadin-date-picker label="[[localize('from')]]"
+                                                value="{{fromDate}}"
+                                                i18n="{{vaadinI18n}}"></vaadin-date-picker>
+
+
+                            <vaadin-date-picker label="[[localize('to')]]"
+                                                value="{{toDate}}"
+                                                i18n="{{vaadinI18n}}"></vaadin-date-picker>
+                        </div>
+                    </template>
+
+                    <div id="buttonContainer">
+                        <paper-button id="exportButton" on-tap="onExportTapped" disabled$="[[!reportId]]" raised>
+                            <iron-icon icon="launch"></iron-icon>
+                            {{localize('buttonExportLabel')}}
+                        </paper-button>
+                        <paper-button id="printButton" on-tap="onPrintTapped" disabled$="[[!reportId]]" raised>
+                            <iron-icon icon="print"></iron-icon>
+                            {{localize('buttonPrintLabel')}}
+                        </paper-button>
+                        <paper-icon-button id="refreshButton"
+                                           on-tap="onRefreshTapped"
+                                           icon="refresh"
+                                           disabled$="[[!reportId]]"></paper-icon-button>
+                    </div>
+                    <paper-tooltip for="exportButton" position="top" offset="4">
+                        {{localize('buttonExportDesc')}}
+                    </paper-tooltip>
+                    <paper-tooltip for="refreshButton" position="top" offset="4">
+                        {{localize('refreshView')}}
+                    </paper-tooltip>
+
+                </paper-material>
+            </div>
+
+            <template id="restampTemplate" is="dom-if" restamp>
+                <div class="row fill-parent">
+
+                    <template is="dom-if" if="[[!showFacets]]">
+                        <paper-icon-button icon="chevron-right" on-tap="onToggleShowFacets"></paper-icon-button>
+                    </template>
+
+                    <div id="facetContainer"
+                         class="light-border noprint"
+                         on-iron-select="onSelectionChanged"
+                         on-iron-deselect="onSelectionChanged"
+                         hidden$="[[!showFacets]]">
+                        <paper-icon-button icon="chevron-left" on-tap="onToggleShowFacets"></paper-icon-button>
+                        <template is="dom-repeat" items="[[facets]]" as="facet">
+                            <strolch-wc-reports-facet base-path="[[basePath]]"
+                                                      base-rest-path="[[baseRestPath]]"
+                                                      locales-path="[[localesPath]]"
+                                                      report-id="[[reportId]]"
+                                                      facet-id="[[facet.type]]"
+                                                      fields="[[facet.values]]"
+                                                      filter="[[allFilters]]"></strolch-wc-reports-facet>
+                        </template>
+                    </div>
+
+                    <div id="tableContainer" class="light-border print-me">
+                        <strolch-wc-reports-table id="table"
+                                                  base-path="[[basePath]]"
+                                                  locales-path="[[localesPath]]"
+                                                  base-rest-path="[[baseRestPath]]"
+                                                  filters-ready="[[filtersReady]]"
+                                                  report-id="[[reportId]]"
+                                                  filter="[[allFilters]]"
+                                                  limit="[[limit]]"
+                                                  offset="[[offset]]"
+                                                  from-date="[[fromDate]]"
+                                                  to-date="[[toDate]]"></strolch-wc-reports-table>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </template>
+
+    <script>
+        Polymer({
+
+            /* Component */
+            is: "strolch-wc-reports",
+            behaviors: [
+                StrolchLocalizeBehavior, StrolchReportsBehavior
+            ],
+
+            /* Properties */
+            properties: {
+                toolbarConfig: {
+                    type: Object,
+                    value: {
+                        pageTitle: "reports",
+                        backButton: true,
+                        searchInput: false,
+                        lockLocation: false
+                    },
+                    notify: true,
+                    readOnly: true
+                },
+                showFacets: {
+                    type: Boolean,
+                    value: true
+                },
+                facets: {
+                    type: Array
+                },
+                reports: {
+                    type: Array
+                },
+                filtersReady: {
+                    type: Boolean,
+                    value: false
+                },
+                allFilters: {
+                    type: Array,
+                    value: []
+                },
+                reportId: {
+                    type: String,
+                    value: null
+                },
+                offset: {
+                    type: Number,
+                    value: 0
+                },
+                limit: {
+                    type: Number,
+                    value: Susi.Constants.limit
+                },
+                fromDate: {
+                    type: Date,
+                    value: null
+                },
+                toDate: {
+                    type: Date,
+                    value: null
+                }
+            },
+
+            /* Computations */
+
+            /* Observers */
+            observers: [],
+
+            /* Listeners */
+            listeners: {},
+            onToggleShowFacets: function (event) {
+                this.showFacets = !this.showFacets;
+            },
+            onGetReportResponse: function (event) {
+                // get the response
+                var response = event.detail.response;
+
+                // directly set this as the available types
+                this.set("reports", response.data);
+            },
+            onGetFacetResponse: function (event) {
+                // get the response
+                var response = event.detail.response;
+
+                // hide the view
+                var restampTemplate = this.$.restampTemplate;
+                restampTemplate.if = false;
+
+                // remove all filters
+                this.set("allFilters", []);
+
+                // directly set this as the available facets
+                this.set("facets", response.data);
+
+                // show the view
+                var that = this;
+                setTimeout(function () {
+                    that.offset = 0;
+                    restampTemplate.if = true;
+                    that.filtersReady = true;
+                });
+            },
+            onPostCsvResponse: function (event) {
+                var response = event.detail.response;
+                console.log('Received CSV Result: 8');
+                var fileName = this.reportId + this.toDateTime(new Date()) + '.csv';
+                Strolch.handleAjaxFileDownload(response, fileName, 'text/csv');
+            },
+            onReportSelected: function (event) {
+                // set the new report id
+                this.filtersReady = false;
+                this.set("reportId", this.reports[this.selectedReportIndex].id);
+                this.$.ajaxGetFacets.generateRequest();
+            },
+            onSelectionChanged: function (event) {
+                this.updateAllFilters();
+            },
+            onExportTapped: function (event) {
+                this.$.ajaxPostCsv.headers = {
+                    'Content-Type': 'application/json',
+                    'Accept': 'text/csv'
+                };
+                this.$.ajaxPostCsv.body = {
+                    filter: this.allFilters
+                };
+                this.$.ajaxPostCsv.generateRequest();
+            },
+            onRefreshTapped: function (event) {
+                this.$$("#table").refreshReports();
+            },
+
+            onPrintTapped: function (elem) {
+                window.print();
+                return true;
+            },
+
+            /* Private */
+
+            /* Public */
+            updateAllFilters: function () {
+                var allFilters = [];
+                var facets = Polymer.dom(this.root).querySelectorAll("strolch-wc-reports-facet");
+                for (var i in facets) {
+                    allFilters.push({
+                        facetType: facets[i].facetId,
+                        facetFilters: facets[i].filters
+                    });
+                }
+                this.set("allFilters", allFilters);
+            }
+
+        });
+    </script>
+</dom-module>
