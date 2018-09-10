@@ -11,6 +11,7 @@
 <link rel="import" href="../paper-tooltip/paper-tooltip.html">
 <link rel="import" href="../vaadin-date-picker/vaadin-date-picker.html">
 
+<link rel="import" href="../strolch-wc-styles/strolch-wc-styles.html">
 <link rel="import" href="../strolch-wc-localize-behavior/strolch-wc-localize-behavior.html">
 
 <link rel="import" href="strolch-wc-reports-behavior.html">
@@ -173,7 +174,7 @@
         </style>
 
         <!-- Requests -->
-        <iron-ajax auto
+        <iron-ajax id="ajaxGetReports"
                    url="[[baseRestPath]]/strolch/reports"
                    content-type="application/json"
                    handle-as="json"
@@ -423,6 +424,10 @@
             onPrintTapped: function (elem) {
                 window.print();
                 return true;
+            },
+
+            reload: function () {
+                this.$.ajaxGetReports.generateRequest();
             },
 
             /* Private */
