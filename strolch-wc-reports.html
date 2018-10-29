@@ -365,10 +365,20 @@
             },
             onGetReportResponse: function (event) {
                 // get the response
-                var response = event.detail.response;
+                var data = event.detail.response.data;
+                var that = this;
+                data.sort(function (a, b) {
+                    a = that.localize(a.name);
+                    b = that.localize(b.name);
+                    if (a < b)
+                        return -1;
+                    if (a > b)
+                        return 1;
+                    return 0;
+                });
 
                 // directly set this as the available types
-                this.set("reports", response.data);
+                this.set("reports", data);
             },
             onGetFacetResponse: function (event) {
                 // get the response
