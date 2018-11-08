@@ -3,6 +3,7 @@
 <link rel="import" href="../iron-ajax/iron-ajax.html">
 <link rel="import" href="../iron-icon/iron-icon.html">
 <link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-dialog/paper-dialog.html">
 <link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../paper-item/paper-item.html">
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
@@ -289,6 +290,15 @@
                 </div>
             </template>
         </div>
+
+        <paper-dialog id="dlg" modal>
+            <h2>[[dlgTitle]]</h2>
+            <p>[[dlgText]]</p>
+            <div class="buttons">
+                <paper-button dialog-confirm autofocus>Close</paper-button>
+            </div>
+        </paper-dialog>
+
     </template>
 
     <script>
@@ -359,7 +369,20 @@
             observers: [],
 
             /* Listeners */
-            listeners: {},
+            listeners: {
+                "strolch-show-dialog": "onShowDialog"
+            },
+
+            onShowDialog: function (event) {
+                this.showError(event.detail.title, event.detail.text);
+            },
+            showError: function (title, text) {
+                this.dlgTitle = title;
+                this.dlgText = text;
+                console.log('ERROR: ' + this.dlgTitle + ': ' + this.dlgText);
+                this.$.dlg.open();
+            },
+
             onToggleShowFacets: function (event) {
                 this.showFacets = !this.showFacets;
             },
