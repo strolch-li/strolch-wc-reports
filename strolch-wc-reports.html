@@ -360,6 +360,12 @@
                 toDate: {
                     type: Date,
                     value: null
+                },
+                propagateShowDialog: {
+                    type: Boolean,
+                    value: function () {
+                        return false
+                    }
                 }
             },
 
@@ -374,7 +380,9 @@
             },
 
             onShowDialog: function (event) {
-                this.showError(event.detail.title, event.detail.text);
+                if (!this.propagateShowDialog) {
+                    this.showError(event.detail.title, event.detail.text);
+                }
             },
             showError: function (title, text) {
                 this.dlgTitle = title;
