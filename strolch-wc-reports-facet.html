@@ -145,7 +145,7 @@
                    handle-as="json"
                    method="GET"
                    on-response="onPostFieldResponse"
-                   on-error="onAjaxError"></iron-ajax>
+                   on-error="onAjaxErrorCustom"></iron-ajax>
 
         <!-- Content -->
         <paper-card>
@@ -164,8 +164,8 @@
                 <div class="card-actions">
 
                     <strolch-wc-debounced-input id="debouncedInput"
-                                          debounced-input="{{searchTerm}}"
-                                          disabled="[[arrayFilled(filters)]]"></strolch-wc-debounced-input>
+                                                debounced-input="{{searchTerm}}"
+                                                disabled="[[arrayFilled(filters)]]"></strolch-wc-debounced-input>
 
                     <paper-listbox id="fieldList" attr-for-selected="field-id" multi>
                         <template is="dom-repeat" items="[[fields]]" as="field">
@@ -253,17 +253,25 @@
                         limit: Susi.Constants.limit
                     };
                     this.$.ajaxGetFields.generateRequest();
+                    this.fire('ajax-running', {running: true});
                 }
             },
 
             /* Listeners */
             listeners: {},
+
+            onAjaxErrorCustom: function (e) {
+                this.onAjaxError(e);
+                this.fire('ajax-running', {running: false});
+            },
+
             onPostFieldResponse: function (event) {
                 // get the response
                 var response = event.detail.response;
 
                 // directly set this as the available types
                 this.set("fields", response.data);
+                this.fire('ajax-running', {running: false});
             },
             onItemsTapped: function (event) {
                 // get the tapped filter
@@ -282,8 +290,7 @@
                 });
                 if (filterIndex >= 0) {
                     filters.splice(filterIndex, 1);
-                }
-                else {
+                } else {
                     filters.push(tappedFilter);
                 }
 

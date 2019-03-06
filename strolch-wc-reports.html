@@ -171,6 +171,34 @@
                         color: var(--google-grey-700);
                     };
                 }
+
+                .blur {
+                    -webkit-filter: blur(3px);
+                    -moz-filter: blur(3px);
+                    -o-filter: blur(3px);
+                    -ms-filter: blur(3px);
+                    filter: blur(3px);
+                }
+
+                .overlay-loading {
+                    position: absolute;
+                    width: 100%;
+                    height: 100%;
+                    z-index: 1;
+                }
+
+                .overlay-loading h2 {
+                    margin-top: 35%;
+                    text-align: center;
+                    color: #4d4d4d;
+                }
+
+                paper-spinner {
+                    display: inherit;
+                    margin-left: auto;
+                    margin-right: auto;
+                }
+
             }
         </style>
 
@@ -181,24 +209,28 @@
                    handle-as="json"
                    method="GET"
                    on-response="onGetReportResponse"
-                   on-error="onAjaxError"></iron-ajax>
+                   on-error="onAjaxErrorCustom"></iron-ajax>
         <iron-ajax id="ajaxGetFacets"
                    url="[[baseRestPath]]/strolch/reports/[[reportId]]/facets"
                    content-type="application/json"
                    handle-as="json"
                    method="GET"
                    on-response="onGetFacetResponse"
-                   on-error="onAjaxError"></iron-ajax>
+                   on-error="onAjaxErrorCustom"></iron-ajax>
         <iron-ajax id="ajaxPostCsv"
                    url="[[baseRestPath]]/strolch/reports/[[reportId]]/csv"
                    content-type="application/json"
                    handle-as="text"
                    method="POST"
                    on-response="onPostCsvResponse"
-                   on-error="onAjaxError"></iron-ajax>
+                   on-error="onAjaxErrorCustom"></iron-ajax>
 
         <!-- Content -->
-        <div class="content">
+        <div class="overlay-loading" hidden$="[[hideOverlay]]">
+            <h2 class="overlay-loading-title">[[localize('loading')]]</h2>
+            <paper-spinner active></paper-spinner>
+        </div>
+        <div id="content" class="content">
             <div class="row no-shrink noprint">
                 <paper-material id="targetContainer">
 
@@ -215,12 +247,12 @@
                     <template is="dom-if" if="[[reportId]]">
                         <div id="dateContainer">
 
-                            <vaadin-date-picker label="[[localize('from')]]"
+                            <vaadin-date-picker label="[[localize('From')]]"
                                                 value="{{fromDate}}"
                                                 i18n="{{vaadinI18n}}"></vaadin-date-picker>
 
 
-                            <vaadin-date-picker label="[[localize('to')]]"
+                            <vaadin-date-picker label="[[localize('To')]]"
                                                 value="{{toDate}}"
                                                 i18n="{{vaadinI18n}}"></vaadin-date-picker>
                         </div>
@@ -270,7 +302,8 @@
                                                       report-id="[[reportId]]"
                                                       facet-id="[[facet.type]]"
                                                       fields="[[facet.values]]"
-                                                      filter="[[allFilters]]"></strolch-wc-reports-facet>
+                                                      filter="[[allFilters]]"
+                                                      on-ajax-running="onAjaxRunning"></strolch-wc-reports-facet>
                         </template>
                     </div>
 
@@ -285,7 +318,8 @@
                                                   limit="[[limit]]"
                                                   offset="[[offset]]"
                                                   from-date="[[fromDate]]"
-                                                  to-date="[[toDate]]"></strolch-wc-reports-table>
+                                                  to-date="[[toDate]]"
+                                                  on-ajax-running="onAjaxRunning"></strolch-wc-reports-table>
                     </div>
                 </div>
             </template>
@@ -328,10 +362,12 @@
                     value: true
                 },
                 facets: {
-                    type: Array
+                    type: Array,
+                    value: []
                 },
                 reports: {
-                    type: Array
+                    type: Array,
+                    value: []
                 },
                 filtersReady: {
                     type: Boolean,
@@ -363,9 +399,11 @@
                 },
                 propagateShowDialog: {
                     type: Boolean,
-                    value: function () {
-                        return false
-                    }
+                    value: false
+                },
+                nrOfAjaxCallsRunning: {
+                    type: Number,
+                    value: 0
                 }
             },
 
@@ -391,6 +429,41 @@
                 this.$.dlg.open();
             },
 
+            onAjaxErrorCustom: function (e) {
+                this.hideLoadingOverlay();
+                this.onAjaxError(e);
+            },
+
+            onAjaxRunning: function (e) {
+                if (e.detail.running) {
+                    this.showLoadingOverlay();
+                } else {
+                    this.hideLoadingOverlay();
+                }
+            },
+
+            showLoadingOverlay: function () {
+                this.nrOfAjaxCallsRunning++;
+                console.log("Showing loading overlay in 150ms...");
+                var that = this;
+                clearTimeout(this.showOverlayTimeout);
+                this.showOverlayTimeout = setTimeout(function () {
+                    console.log("Showing loading overlay...");
+                    that.hideOverlay = false;
+                    that.$.content.classList.add("blur");
+                }, 150);
+            },
+            hideLoadingOverlay: function () {
+                this.nrOfAjaxCallsRunning--;
+
+                if (this.nrOfAjaxCallsRunning == 0) {
+                    console.log("Hiding loading overlay...");
+                    clearTimeout(this.showOverlayTimeout);
+                    this.hideOverlay = true;
+                    this.$.content.classList.remove("blur");
+                }
+            },
+
             onToggleShowFacets: function (event) {
                 this.showFacets = !this.showFacets;
             },
@@ -410,6 +483,8 @@
 
                 // directly set this as the available types
                 this.set("reports", data);
+
+                this.hideLoadingOverlay();
             },
             onGetFacetResponse: function (event) {
                 // get the response
@@ -424,6 +499,9 @@
 
                 // directly set this as the available facets
                 this.set("facets", response.data);
+                if (response.data.length == 0) {
+                    this.showFacets = false;
+                }
 
                 // show the view
                 var that = this;
@@ -432,18 +510,30 @@
                     restampTemplate.if = true;
                     that.filtersReady = true;
                 });
+
+                this.hideLoadingOverlay();
             },
             onPostCsvResponse: function (event) {
                 var response = event.detail.response;
                 console.log('Received CSV Result: 8');
                 var fileName = this.reportId + this.toDateTime(new Date()) + '.csv';
                 Strolch.handleAjaxFileDownload(response, fileName, 'text/csv');
+
+                this.hideLoadingOverlay();
             },
             onReportSelected: function (event) {
+
+                // clear the previous view
+                var restampTemplate = this.$.restampTemplate;
+                restampTemplate.if = false;
+                this.set("allFilters", []);
+                this.set("facets", []);
+
                 // set the new report id
                 this.filtersReady = false;
                 this.set("reportId", this.reports[this.selectedReportIndex].id);
                 this.$.ajaxGetFacets.generateRequest();
+                this.showLoadingOverlay();
             },
             onSelectionChanged: function (event) {
                 this.updateAllFilters();
@@ -453,13 +543,28 @@
                     'Content-Type': 'application/json',
                     'Accept': 'text/csv'
                 };
+
+                var from = this.fromDate == null || Strolch.isEmptyString(this.fromDate) ? null : new Date(this.fromDate).toISOString();
+                var to = this.toDate == null || Strolch.isEmptyString(this.toDate) ? null : new Date(this.toDate).toISOString();
+
                 this.$.ajaxPostCsv.body = {
-                    filter: this.allFilters
+                    filter: this.allFilters,
+                    dateRange: {
+                        from: from,
+                        to: to
+                    }
                 };
                 this.$.ajaxPostCsv.generateRequest();
+                this.showLoadingOverlay();
             },
             onRefreshTapped: function (event) {
-                this.$$("#table").refreshReports();
+                var table = this.$$("#table");
+                if (table == null) {
+                    this.$.ajaxGetFacets.generateRequest();
+                    this.showLoadingOverlay();
+                } else {
+                    table.refreshReports();
+                }
             },
 
             onPrintTapped: function (elem) {
@@ -469,6 +574,7 @@
 
             reload: function () {
                 this.$.ajaxGetReports.generateRequest();
+                this.showLoadingOverlay();
             },
 
             /* Private */

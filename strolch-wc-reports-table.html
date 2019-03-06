@@ -94,7 +94,7 @@
                    handle-as="json"
                    method="POST"
                    on-response="onPostReportResponse"
-                   on-error="onAjaxError"></iron-ajax>
+                   on-error="onAjaxErrorCustom"></iron-ajax>
 
         <!-- Content -->
         <paper-material id="content">
@@ -125,7 +125,7 @@
                     <div class="g-center">
                         <paper-icon-button icon="first-page" on-tap="_toFirstPage"></paper-icon-button>
                         <paper-icon-button icon="chevron-left" on-tap="_toPreviousPage"></paper-icon-button>
-                        <span>[[data.offset]] to [[_getEnd(data)]] of [[data.size]]</span>
+                        <span>[[data.offset]] [[localize('to')]] [[_getEnd(data)]] [[localize('of')]] [[_getSize(data)]]</span>
                         <paper-icon-button icon="chevron-right" on-tap="_toNextPage"></paper-icon-button>
                         <paper-icon-button icon="last-page" on-tap="_toLastPage"></paper-icon-button>
                     </div>
@@ -186,6 +186,10 @@
                 return data == null ? 0 : data.size;
             },
 
+            _getSize: function (data) {
+                return data == null || data.size >= 2147483647 ? this.localize('unknown') : data.size;
+            },
+
             _toFirstPage: function () {
                 this.offset = 0;
             },
@@ -193,7 +197,11 @@
                 this.offset = this.data.previousOffset;
             },
             _toNextPage: function () {
-                this.offset = this.data.nextOffset;
+                if (this.data.size >= 2147483647) {
+                    this.offset = this.data.offset + this.data.limit;
+                } else {
+                    this.offset = this.data.nextOffset;
+                }
             },
             _toLastPage: function () {
                 this.offset = this.data.lastOffset;
@@ -201,6 +209,11 @@
 
             setLimit: function (evt) {
                 this.limit = Number.parseInt(evt.target.textContent.trim());
+            },
+
+            onAjaxErrorCustom: function (e) {
+                this.onAjaxError(e);
+                this.fire('ajax-running', {running: false});
             },
 
             queryReports: function (reportId, filter, offset, limit, fromDate, toDate, filtersReady) {
@@ -220,6 +233,7 @@
                     }
                 };
                 this.$.ajaxPostReport.generateRequest();
+                this.fire('ajax-running', {running: true});
             },
 
             /* Listeners */
@@ -246,6 +260,8 @@
                 this.set("data", response.data);
                 this.set("columns", response.data.columns);
                 this.set("rows", response.data.rows);
+
+                this.fire('ajax-running', {running: false});
             },
 
             /* Private */
@@ -264,6 +280,7 @@
             },
             refreshReports: function () {
                 this.$.ajaxPostReport.generateRequest();
+                this.fire('ajax-running', {running: true});
             }
         });
     </script>
