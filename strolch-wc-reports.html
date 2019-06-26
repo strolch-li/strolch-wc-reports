@@ -304,6 +304,7 @@
                                                       facet-id="[[facet.type]]"
                                                       fields="[[facet.values]]"
                                                       filter="[[allFilters]]"
+                                                      facet-limit="[[facetLimit]]"
                                                       on-ajax-running="onAjaxRunning"></strolch-wc-reports-facet>
                         </template>
                     </div>
@@ -533,6 +534,9 @@
                 // set the new report id
                 this.filtersReady = false;
                 this.set("reportId", this.reports[this.selectedReportIndex].id);
+                this.$.ajaxGetFacets.params = {
+                    limit: this.facetLimit
+                };
                 this.$.ajaxGetFacets.generateRequest();
                 this.showLoadingOverlay();
             },

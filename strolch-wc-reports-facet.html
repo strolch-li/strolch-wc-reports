@@ -250,7 +250,7 @@
                 if (newValue != null && oldValue != null) {
                     this.$.ajaxGetFields.params = {
                         query: newValue,
-                        limit: Susi.Constants.limit
+                        limit: this.facetLimit
                     };
                     this.$.ajaxGetFields.generateRequest();
                     this.fire('ajax-running', {running: true});
