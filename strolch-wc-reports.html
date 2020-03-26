@@ -39,7 +39,6 @@
                 .content {
                     @apply(--layout-vertical);
                     height: calc(100vh - var(--app-header-height) - (2 * var(--app-pages-content-padding)));
-                    padding: var(--app-pages-content-padding);
                 }
 
                 .row {
@@ -199,7 +198,6 @@
                     margin-left: auto;
                     margin-right: auto;
                 }
-
             }
         </style>
 
@@ -468,7 +466,9 @@
 
             onToggleShowFacets: function (event) {
                 this.showFacets = !this.showFacets;
+                Strolch.setQueryParamValue("showFacets", this.showFacets);
             },
+
             onGetReportResponse: function (event) {
                 // get the response
                 var data = event.detail.response.data;
@@ -484,10 +484,21 @@
                 });
 
                 // directly set this as the available types
-                this.set("reports", data);
+                this.reports = data;
+
+                // see if we should reload a report
+                if (this.reportToLoad != null) {
+                    for (var i = 0; i < this.reports.length; i++) {
+                        if (this.reports[i].id === this.reportToLoad) {
+                            this.selectedReportIndex = i;
+                            break;
+                        }
+                    }
+                }
 
                 this.hideLoadingOverlay();
             },
+
             onGetFacetResponse: function (event) {
                 // get the response
                 var response = event.detail.response;
@@ -515,6 +526,7 @@
 
                 this.hideLoadingOverlay();
             },
+
             onPostCsvResponse: function (event) {
                 var response = event.detail.response;
                 console.log('Received CSV Result: 8');
@@ -523,6 +535,7 @@
 
                 this.hideLoadingOverlay();
             },
+
             onReportSelected: function (event) {
 
                 // clear the previous view
@@ -533,16 +546,20 @@
 
                 // set the new report id
                 this.filtersReady = false;
-                this.set("reportId", this.reports[this.selectedReportIndex].id);
+                let reportId = this.reports[this.selectedReportIndex].id;
+                this.set("reportId", reportId);
                 this.$.ajaxGetFacets.params = {
                     limit: this.facetLimit
                 };
-                this.$.ajaxGetFacets.generateRequest();
                 this.showLoadingOverlay();
+                this.$.ajaxGetFacets.generateRequest();
+                Strolch.setQueryParamValue("reportId", reportId);
             },
+
             onSelectionChanged: function (event) {
                 this.updateAllFilters();
             },
+
             onExportTapped: function (event) {
                 this.$.ajaxPostCsv.headers = {
                     'Content-Type': 'application/json',
@@ -562,6 +579,7 @@
                 this.$.ajaxPostCsv.generateRequest();
                 this.showLoadingOverlay();
             },
+
             onRefreshTapped: function (event) {
                 var table = this.$$("#table");
                 if (table == null) {
@@ -585,6 +603,17 @@
             /* Private */
 
             /* Public */
+            attached: function () {
+
+                var reportId = Strolch.getQueryParamValue("reportId");
+                if (reportId != null && reportId !== "") {
+                    console.log("Selected ReportId is " + reportId);
+                    this.reportToLoad = reportId;
+                }
+
+                this.showFacets = Strolch.getQueryParamValue("showFacets") === "true";
+            },
+
             updateAllFilters: function () {
                 var allFilters = [];
                 var facets = Polymer.dom(this.root).querySelectorAll("strolch-wc-reports-facet");
