@@ -546,7 +546,7 @@
 
                 // set the new report id
                 this.filtersReady = false;
-                let reportId = this.reports[this.selectedReportIndex].id;
+                var reportId = this.reports[this.selectedReportIndex].id;
                 this.set("reportId", reportId);
                 this.$.ajaxGetFacets.params = {
                     limit: this.facetLimit
