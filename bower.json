@@ -1,7 +1,7 @@
 {
   "name": "strolch-wc-reports",
   "description": "Strolch WebComponent Reports",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "authors": [
     "Robert von Burg"
   ],
@@ -20,11 +20,11 @@
   "ignore": [],
   "dependencies": {
 
-    "strolchjs": "4treesCH/strolchjs#^0.3.0",
+    "strolchjs": "4treesCH/strolchjs#^0.4.0",
     "strolch-wc-styles": "4treesCH/strolch-wc-styles#^0.3.0",
     "strolch-wc-badge": "4treesCH/strolch-wc-badge#^0.1.0",
     "strolch-wc-debounced-input": "4treesCH/strolch-wc-debounced-input#^0.1.0",
-    "strolch-wc-localize-behavior": "4treesCH/strolch-wc-localize-behavior#^1.1.6",
+    "strolch-wc-localize-behavior": "4treesCH/strolch-wc-localize-behavior#^1.1.7",
 
     "polymer": "Polymer/polymer#^1.11.3",
 
