@@ -455,11 +455,13 @@
                 },
                 fromDate: {
                     type: Date,
-                    value: null
+                    value: null,
+                    observer: 'dateFilterChanged'
                 },
                 toDate: {
                     type: Date,
-                    value: null
+                    value: null,
+                    observer: 'dateFilterChanged'
                 },
                 propagateShowDialog: {
                     type: Boolean,
@@ -500,6 +502,10 @@
                 } else {
                     this.hideLoadingOverlay();
                 }
+            },
+            dateFilterChanged: function (newValue) {
+                if (newValue != null)
+                    this.queryReports();
             },
 
             /* Listeners */
