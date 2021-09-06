@@ -145,7 +145,8 @@
                    handle-as="json"
                    method="GET"
                    on-response="onPostFieldResponse"
-                   on-error="onAjaxErrorCustom"></iron-ajax>
+                   on-error="onAjaxError"
+                   loading="{{facetLoading}}"></iron-ajax>
 
         <!-- Content -->
         <paper-card>
@@ -234,9 +235,10 @@
                     value: [],
                     notify: true
                 },
-                filter: {
-                    type: Array,
-                    value: []
+                facetLoading: {
+                    type: Boolean,
+                    value: false,
+                    observer: 'facetLoadingChanged'
                 }
             },
 
@@ -253,17 +255,16 @@
                         limit: this.facetLimit
                     };
                     this.$.ajaxGetFields.generateRequest();
-                    this.fire('ajax-running', {running: true});
+                }
+            },
+            facetLoadingChanged: function (newValue, oldValue) {
+                if (newValue != null && oldValue != null && newValue !== oldValue) {
+                    this.fire('facet-loading', {loading: newValue});
                 }
             },
 
             /* Listeners */
             listeners: {},
-
-            onAjaxErrorCustom: function (e) {
-                this.onAjaxError(e);
-                this.fire('ajax-running', {running: false});
-            },
 
             onPostFieldResponse: function (event) {
                 // get the response
@@ -271,7 +272,6 @@
 
                 // directly set this as the available types
                 this.set("fields", response.data);
-                this.fire('ajax-running', {running: false});
             },
             onItemsTapped: function (event) {
                 // get the tapped filter

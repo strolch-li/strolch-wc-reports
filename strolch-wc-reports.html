@@ -34,48 +34,48 @@
             @media screen {
                 :host {
                     --box-space: 12px;
+                    --facet-width-opened: 300px;
+                    --facet-width-closed: 22px;
+                    --facet-width: var(--facet-width-opened);
+                    --table-width: calc(100vw - var(--facet-width) - 30px);
                 }
 
                 .content {
-                    @apply(--layout-vertical);
-                    height: calc(100vh - var(--app-header-height) - (2 * var(--app-pages-content-padding)));
+                    display: flex;
+                    flex-direction: column;
                 }
 
                 .row {
-                    @apply(--layout-horizontal);
+                    display: flex;
+                    flex-direction: row;
                 }
 
                 .row:not(:first-of-type) {
                     padding-top: var(--box-space);
                 }
 
-                .row.fill-parent {
-                    height: 100%;
-                }
-
                 .row.no-shrink {
                     flex-shrink: 0;
                 }
 
-                #targetContainer {
+                #actionBar {
                     @apply(--layout-horizontal);
                     width: 100%;
-                    min-height: 58px;
                     padding: 0 12px;
                     background-color: white;
                 }
 
-                #targetContainer > paper-dropdown-menu {
+                #actionBar > paper-dropdown-menu {
                     margin-right: auto;
                 }
 
-                #targetContainer > paper-dropdown-menu,
+                #actionBar > paper-dropdown-menu,
                 #dateContainer {
                     @apply(--layout-horizontal);
                     @apply(--layout-end);
                 }
 
-                #targetContainer > paper-dropdown-menu,
+                #actionBar > paper-dropdown-menu,
                 #dateContainer > vaadin-date-picker {
                     height: 100%;
 
@@ -109,10 +109,17 @@
                 }
 
                 #facetContainer {
-                    @apply(--layout-flex);
+                    display: flex;
+                    flex-direction: column;
+                    flex-basis: var(--facet-width);
+                    flex-grow: 0;
+                    flex-shrink: 0;
+                    margin-left: 10px;
                     margin-right: calc(var(--box-space) * 0.5);
-                    overflow-x: visible;
-                    overflow-y: scroll;
+                }
+
+                strolch-wc-reports-facet {
+                    width: 300px;
                 }
 
                 #facetContainer > strolch-wc-reports-facet:not(:last-of-type) {
@@ -120,17 +127,31 @@
                 }
 
                 #tableContainer {
-                    @apply(--layout-flex-3);
                     margin-left: calc(var(--box-space) * 0.5);
-                    overflow-x: visible;
-                    overflow-y: scroll;
+                }
+
+                strolch-wc-reports-table {
+                    height: calc(100vh - 190px);
+                    width: var(--table-width);
+                }
+
+                .footer {
+                    padding-left: 10px;
+                    padding-right: 10px;
+                    padding-top: 5px;
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: space-between;
+                }
+
+                .footer p {
+                    color: #b5b5b5;
                 }
 
                 .light-border {
                     border-style: solid;
                     border-width: 0.5px;
                     border-color: var(--google-grey-300);
-                    box-sizing: border-box;
                 }
 
                 paper-dropdown-menu paper-item {
@@ -198,6 +219,10 @@
                     margin-left: auto;
                     margin-right: auto;
                 }
+
+                .limitBtn {
+                    min-width: inherit;
+                }
             }
         </style>
 
@@ -208,21 +233,32 @@
                    handle-as="json"
                    method="GET"
                    on-response="onGetReportResponse"
-                   on-error="onAjaxErrorCustom"></iron-ajax>
+                   on-error="onAjaxError"
+                   loading="{{loadingGetReports}}"></iron-ajax>
         <iron-ajax id="ajaxGetFacets"
                    url="[[baseRestPath]]/strolch/reports/[[reportId]]/facets"
                    content-type="application/json"
                    handle-as="json"
                    method="GET"
                    on-response="onGetFacetResponse"
-                   on-error="onAjaxErrorCustom"></iron-ajax>
+                   on-error="onAjaxError"
+                   loading="{{loadingGetFacets}}"></iron-ajax>
         <iron-ajax id="ajaxPostCsv"
                    url="[[baseRestPath]]/strolch/reports/[[reportId]]/csv"
                    content-type="application/json"
                    handle-as="text"
                    method="POST"
                    on-response="onPostCsvResponse"
-                   on-error="onAjaxErrorCustom"></iron-ajax>
+                   on-error="onAjaxError"
+                   loading="{{loadingPostCsv}}"></iron-ajax>
+        <iron-ajax id="ajaxPostReport"
+                   url="[[baseRestPath]]/strolch/reports/[[reportId]]"
+                   content-type="application/json"
+                   handle-as="json"
+                   method="POST"
+                   on-response="onPostReportResponse"
+                   on-error="onAjaxError"
+                   loading="{{loadingPostReport}}"></iron-ajax>
 
         <!-- Content -->
         <div class="overlay-loading" hidden$="[[hideOverlay]]">
@@ -231,7 +267,7 @@
         </div>
         <div id="content" class="content">
             <div class="row no-shrink noprint">
-                <paper-material id="targetContainer">
+                <paper-material id="actionBar">
 
                     <paper-dropdown-menu label="[[localize('reportType')]]">
                         <paper-listbox class="dropdown-content"
@@ -282,17 +318,22 @@
             </div>
 
             <template id="restampTemplate" is="dom-if" restamp>
-                <div class="row fill-parent">
+                <div class="row">
 
-                    <template is="dom-if" if="[[!showFacets]]">
-                        <paper-icon-button icon="chevron-right" on-tap="onToggleShowFacets"></paper-icon-button>
+                    <template is="dom-if" if="[[!showFacets]]" restamp>
+                        <div>
+                            <paper-icon-button class="showFacetsBtn noprint"
+                                               icon="chevron-right"
+                                               on-tap="onToggleShowFacets"></paper-icon-button>
+                        </div>
                     </template>
 
                     <div id="facetContainer"
                          class="light-border noprint"
                          on-iron-select="onSelectionChanged"
                          on-iron-deselect="onSelectionChanged"
-                         hidden$="[[!showFacets]]">
+                         hidden$="[[!showFacets]]"
+                         restamp>
                         <paper-icon-button icon="chevron-left" on-tap="onToggleShowFacets"></paper-icon-button>
                         <template is="dom-repeat" items="[[facets]]" as="facet">
                             <strolch-wc-reports-facet base-path="[[basePath]]"
@@ -303,23 +344,40 @@
                                                       fields="[[facet.values]]"
                                                       filter="[[allFilters]]"
                                                       facet-limit="[[facetLimit]]"
-                                                      on-ajax-running="onAjaxRunning"></strolch-wc-reports-facet>
+                                                      on-facet-loading="onFacetLoading"></strolch-wc-reports-facet>
                         </template>
                     </div>
 
-                    <div id="tableContainer" class="light-border print-me">
-                        <strolch-wc-reports-table id="table"
-                                                  base-path="[[basePath]]"
+                    <div id="tableContainer">
+                        <strolch-wc-reports-table base-path="[[basePath]]"
                                                   locales-path="[[localesPath]]"
-                                                  base-rest-path="[[baseRestPath]]"
-                                                  filters-ready="[[filtersReady]]"
-                                                  report-id="[[reportId]]"
-                                                  filter="[[allFilters]]"
-                                                  limit="[[limit]]"
-                                                  offset="[[offset]]"
-                                                  from-date="[[fromDate]]"
-                                                  to-date="[[toDate]]"
-                                                  on-ajax-running="onAjaxRunning"></strolch-wc-reports-table>
+                                                  data="[[data]]"></strolch-wc-reports-table>
+
+
+                        <template is="dom-if" if="[[arrayFilled(data.rows)]]">
+                            <div class="footer noprint">
+                                <div>
+                                    <paper-button class="limitBtn" on-tap="setLimit">25</paper-button>
+                                    <paper-button class="limitBtn" on-tap="setLimit">50</paper-button>
+                                    <paper-button class="limitBtn" on-tap="setLimit">100</paper-button>
+                                </div>
+                                <div>
+                                    <div class="g-center">
+                                        <paper-icon-button icon="first-page" on-tap="_toFirstPage"></paper-icon-button>
+                                        <paper-icon-button icon="chevron-left"
+                                                           on-tap="_toPreviousPage"></paper-icon-button>
+                                        <span>[[data.offset]] [[localize('to')]] [[_getEnd(data)]] [[localize('of')]] [[_getSize(data)]]</span>
+                                        <paper-icon-button icon="chevron-right"
+                                                           on-tap="_toNextPage"></paper-icon-button>
+                                        <paper-icon-button icon="last-page" on-tap="_toLastPage"></paper-icon-button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p>[[localize('duration')]] [[data.duration]]</p>
+                                </div>
+                            </div>
+                        </template>
+
                     </div>
                 </div>
             </template>
@@ -359,7 +417,8 @@
                 },
                 showFacets: {
                     type: Boolean,
-                    value: true
+                    value: true,
+                    observer: 'showFacetsChanged'
                 },
                 facets: {
                     type: Array,
@@ -375,10 +434,15 @@
                 },
                 allFilters: {
                     type: Array,
-                    value: []
+                    value: [],
+                    observer: 'filtersChanged'
                 },
                 reportId: {
                     type: String,
+                    value: null
+                },
+                data: {
+                    type: Object,
                     value: null
                 },
                 offset: {
@@ -401,7 +465,23 @@
                     type: Boolean,
                     value: false
                 },
-                nrOfAjaxCallsRunning: {
+                loadingGetReports: {
+                    type: Boolean,
+                    value: false
+                },
+                loadingGetFacets: {
+                    type: Boolean,
+                    value: false
+                },
+                loadingPostCsv: {
+                    type: Boolean,
+                    value: false
+                },
+                loadingPostReport: {
+                    type: Boolean,
+                    value: false
+                },
+                nrOfFacetsLoading: {
                     type: Number,
                     value: 0
                 }
@@ -410,7 +490,17 @@
             /* Computations */
 
             /* Observers */
-            observers: [],
+            observers: [
+                'observeAjaxRunning(loadingGetReports, loadingGetFacets, loadingPostCsv, loadingPostReport, nrOfFacetsLoading)'
+            ],
+            observeAjaxRunning: function (loadingGetReports, loadingGetFacets, loadingPostCsv, loadingPostReport, nrOfFacetsLoading) {
+                var running = loadingGetReports || loadingGetFacets || loadingPostCsv || loadingPostReport || nrOfFacetsLoading > 0;
+                if (running) {
+                    this.showLoadingOverlay();
+                } else {
+                    this.hideLoadingOverlay();
+                }
+            },
 
             /* Listeners */
             listeners: {
@@ -429,41 +519,28 @@
                 this.$.dlg.open();
             },
 
-            onAjaxErrorCustom: function (e) {
-                this.hideLoadingOverlay();
-                this.onAjaxError(e);
+            onFacetLoading: function (e) {
+                if (e.detail.loading)
+                    this.nrOfFacetsLoading = this.nrOfFacetsLoading + 1;
+                else
+                    this.nrOfFacetsLoading = this.nrOfFacetsLoading - 1;
             },
-
-            onAjaxRunning: function (e) {
-                if (e.detail.running) {
-                    this.showLoadingOverlay();
-                } else {
-                    this.hideLoadingOverlay();
-                }
-            },
-
             showLoadingOverlay: function () {
-                this.nrOfAjaxCallsRunning++;
-                console.log("Showing loading overlay in 150ms...");
-                var that = this;
-                clearTimeout(this.showOverlayTimeout);
-                this.showOverlayTimeout = setTimeout(function () {
+                this.debounce("showLoadingOverlay", function () {
                     console.log("Showing loading overlay...");
-                    that.hideOverlay = false;
-                    that.$.content.classList.add("blur");
-                }, 150);
+                    this.hideOverlay = false;
+                    this.$.content.classList.add("blur");
+                }.bind(this), 150);
             },
             hideLoadingOverlay: function () {
-                this.nrOfAjaxCallsRunning--;
-
-                if (this.nrOfAjaxCallsRunning == 0) {
-                    console.log("Hiding loading overlay...");
-                    clearTimeout(this.showOverlayTimeout);
-                    this.hideOverlay = true;
-                    this.$.content.classList.remove("blur");
-                }
+                this.cancelDebouncer("showLoadingOverlay");
+                this.hideOverlay = true;
+                this.$.content.classList.remove("blur");
             },
 
+            showFacetsChanged: function (newValue) {
+                this.updateStyles({'--facet-width': newValue ? 'var(--facet-width-opened)' : 'var(--facet-width-closed)'});
+            },
             onToggleShowFacets: function (event) {
                 this.showFacets = !this.showFacets;
                 Strolch.setQueryParamValue("showFacets", this.showFacets);
@@ -508,23 +585,105 @@
                 restampTemplate.if = false;
 
                 // remove all filters
-                this.set("allFilters", []);
+                this.allFilters = [];
 
                 // directly set this as the available facets
-                this.set("facets", response.data);
-                if (response.data.length == 0) {
+                this.facets = response.data;
+                if (response.data.length === 0) {
                     this.showFacets = false;
                 }
 
                 // show the view
-                var that = this;
-                setTimeout(function () {
-                    that.offset = 0;
+                this.async(function () {
+                    this.offset = 0;
                     restampTemplate.if = true;
-                    that.filtersReady = true;
+                    this.filtersReady = true;
+                    this.queryReports();
+                }.bind(this));
+            },
+
+            _hasNext: function (data) {
+                return data != null && data.nextOffset > data.offset;
+            },
+            _hasPrevious: function (data) {
+                return data != null && data.previousOffset < data.offset;
+            },
+
+            _getEnd: function (data) {
+                if (this._hasNext(data)) return data.nextOffset;
+                return data == null ? 0 : data.size;
+            },
+
+            _getSize: function (data) {
+                return data == null || data.size >= 2147483647 ? this.localize('unknown') : data.size;
+            },
+
+            _toFirstPage: function () {
+                this.offset = 0;
+                this.queryReports();
+            },
+            _toPreviousPage: function () {
+                this.offset = this.data.previousOffset;
+                this.queryReports();
+            },
+            _toNextPage: function () {
+                if (this.data.size >= 2147483647) {
+                    this.offset = this.data.offset + this.data.limit;
+                } else {
+                    this.offset = this.data.nextOffset;
+                }
+
+                this.queryReports();
+            },
+            _toLastPage: function () {
+                this.offset = this.data.lastOffset;
+                this.queryReports();
+            },
+
+            setLimit: function (evt) {
+                this.limit = Number.parseInt(evt.target.textContent.trim());
+                this.queryReports();
+            },
+
+            filtersChanged: function (newValue) {
+                if (newValue != null)
+                    this.queryReports();
+            },
+
+            queryReports: function () {
+                if (!this.filtersReady)
+                    return;
+
+                var from = this.fromDate == null || Strolch.isEmptyString(this.fromDate) ? null : new Date(this.fromDate).toISOString();
+                var to = this.toDate == null || Strolch.isEmptyString(this.toDate) ? null : new Date(this.toDate).toISOString();
+
+                this.$.ajaxPostReport.body = {
+                    filter: this.allFilters,
+                    offset: this.offset,
+                    limit: this.limit,
+                    dateRange: {
+                        from: from,
+                        to: to
+                    }
+                };
+                this.$.ajaxPostReport.generateRequest();
+            },
+            onPostReportResponse: function (event) {
+                if (this.selectedRow != null) {
+                    this.selectedRow.classList.remove('selected');
+                    this.selectedRow = null;
+                }
+
+                // get the response
+                var response = event.detail.response;
+
+                // sort the columns by index
+                response.data.columns.sort(function (columnA, columnB) {
+                    return columnA.index - columnB.index;
                 });
 
-                this.hideLoadingOverlay();
+                // directly set this as the columns and rows
+                this.data = response.data;
             },
 
             onPostCsvResponse: function (event) {
@@ -532,26 +691,22 @@
                 console.log('Received CSV Result: 8');
                 var fileName = this.reportId + this.toDateTime(new Date()) + '.csv';
                 Strolch.handleAjaxFileDownload(response, fileName, 'text/csv');
-
-                this.hideLoadingOverlay();
             },
 
             onReportSelected: function (event) {
-
                 // clear the previous view
                 var restampTemplate = this.$.restampTemplate;
                 restampTemplate.if = false;
-                this.set("allFilters", []);
-                this.set("facets", []);
+                this.allFilters = [];
+                this.facets = [];
 
                 // set the new report id
                 this.filtersReady = false;
                 var reportId = this.reports[this.selectedReportIndex].id;
-                this.set("reportId", reportId);
+                this.reportId = reportId;
                 this.$.ajaxGetFacets.params = {
                     limit: this.facetLimit
                 };
-                this.showLoadingOverlay();
                 this.$.ajaxGetFacets.generateRequest();
                 Strolch.setQueryParamValue("reportId", reportId);
             },
@@ -577,17 +732,10 @@
                     }
                 };
                 this.$.ajaxPostCsv.generateRequest();
-                this.showLoadingOverlay();
             },
 
             onRefreshTapped: function (event) {
-                var table = this.$$("#table");
-                if (table == null) {
-                    this.$.ajaxGetFacets.generateRequest();
-                    this.showLoadingOverlay();
-                } else {
-                    table.refreshReports();
-                }
+                this.$.ajaxPostReport.generateRequest();
             },
 
             onPrintTapped: function (elem) {
@@ -597,14 +745,12 @@
 
             reload: function () {
                 this.$.ajaxGetReports.generateRequest();
-                this.showLoadingOverlay();
             },
 
             /* Private */
 
             /* Public */
             attached: function () {
-
                 var reportId = Strolch.getQueryParamValue("reportId");
                 if (reportId != null && reportId !== "") {
                     console.log("Selected ReportId is " + reportId);
@@ -623,9 +769,8 @@
                         facetFilters: facets[i].filters
                     });
                 }
-                this.set("allFilters", allFilters);
+                this.allFilters = allFilters;
             }
-
         });
     </script>
 </dom-module>

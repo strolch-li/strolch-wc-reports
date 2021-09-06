@@ -13,126 +13,77 @@
         <style is="custom-style" include="strolch-wc-styles">
             :host {
                 --column-count: 0;
-                --column-min-width: 100px;
                 --column-side-padding: 24px;
 
                 display: block;
-                min-width: 100%;
-
             }
 
-            paper-material {
-                min-width: 100%;
+            .content {
+                display: block;
+                overflow: auto;
                 background-color: white;
-                overflow: scroll;
+                height: calc(100vh - 190px);
             }
 
-            .table {
-                min-width: 100%;
-            }
-
-            .table-caption {
-                display: table-caption;
-                text-align: center;
-                font-weight: bold;
-                font-size: larger;
-            }
-
-            .table-row {
-                box-sizing: border-box;
+            .content-row {
                 display: flex;
                 flex-direction: row;
                 margin-top: -1px;
+                flex-grow: 0;
+                flex-shrink: 0;
+                flex-basis: 1000px;
             }
 
-            .table-row:not(:first-child) {
+            .content-row:not(:first-child) {
                 border-top: 1px solid #e3e3e3;
                 cursor: pointer;
             }
 
-            .table-heading {
+            .content-heading {
                 font-weight: bold;
             }
 
-            .table-heading,
-            .table-cell {
+            .content-heading,
+            .content-cell {
                 display: flex;
                 padding: 0 var(--column-side-padding);
                 overflow: hidden;
                 align-items: center;
-                flex-basis: var(--column-min-width);
-                flex-grow: 1;
+                flex-basis: 100px;
+                flex-grow: 0;
                 flex-shrink: 0;
                 justify-content: flex-start;
                 min-height: 48px;
             }
 
+            .data:nth-child(even) {
+                background: #f1eeee;
+            }
+
             .selected {
-                background: #e7e7e7;
-            }
-
-            .footer {
-                padding: 10px;
-            }
-
-            .footer p {
-                color: #b5b5b5;
-            }
-
-            .limitBtn {
-                min-width: inherit;
+                background: rgba(0, 0, 0, 0.26) !important;
             }
 
         </style>
 
-        <!-- Requests -->
-        <iron-ajax id="ajaxPostReport"
-                   url="[[baseRestPath]]/strolch/reports/[[reportId]]"
-                   content-type="application/json"
-                   handle-as="json"
-                   method="POST"
-                   on-response="onPostReportResponse"
-                   on-error="onAjaxErrorCustom"></iron-ajax>
-
         <!-- Content -->
-        <paper-material id="content">
-            <div class="table">
-                <div class="table-row">
-                    <template is="dom-repeat" items="[[columns]]" as="column">
-                        <div class="table-heading">[[localize(column.name)]]</div>
-                    </template>
-                </div>
-                <template is="dom-repeat" items="[[rows]]" as="row">
-                    <div class="table-row" on-tap="onRowTapped">
-                        <template is="dom-repeat" items="[[columns]]" as="column">
-                            <div class="table-cell">[[getCellProperty(row, column)]]</div>
-                        </template>
+        <paper-material class="content">
+            <div class="content-row" style$="width: [[tableWidth]]px">
+                <template is="dom-repeat" items="[[columns]]" as="column">
+                    <div class="content-heading" style$="flex-basis: [[column.width]]px">[[localize(column.name)]]
                     </div>
                 </template>
             </div>
+            <template is="dom-repeat" items="[[rows]]" as="row">
+                <div class="content-row data" style$="width: [[tableWidth]]px" on-tap="onRowTapped">
+                    <template is="dom-repeat" items="[[columns]]" as="column">
+                        <div class="content-cell" style$="flex-basis: [[column.width]]px">
+                            [[getCellProperty(row, column)]]
+                        </div>
+                    </template>
+                </div>
+            </template>
         </paper-material>
-
-        <template is="dom-if" if="[[arrayFilled(rows)]]">
-            <div class="g-row footer">
-                <div class="g-3">
-                    <paper-button class="limitBtn" on-tap="setLimit">25</paper-button>
-                    <paper-button class="limitBtn" on-tap="setLimit">50</paper-button>
-                    <paper-button class="limitBtn" on-tap="setLimit">100</paper-button>
-                </div>
-                <div class="g-7">
-                    <div class="g-center">
-                        <paper-icon-button icon="first-page" on-tap="_toFirstPage"></paper-icon-button>
-                        <paper-icon-button icon="chevron-left" on-tap="_toPreviousPage"></paper-icon-button>
-                        <span>[[data.offset]] [[localize('to')]] [[_getEnd(data)]] [[localize('of')]] [[_getSize(data)]]</span>
-                        <paper-icon-button icon="chevron-right" on-tap="_toNextPage"></paper-icon-button>
-                        <paper-icon-button icon="last-page" on-tap="_toLastPage"></paper-icon-button>
-                    </div>
-                </div>
-                <div class="g-2">
-                    <p>[[localize('duration')]] [[data.duration]]</p>
-                </div>
-            </div>
-        </template>
 
     </template>
 
@@ -148,137 +99,79 @@
 
             /* Properties */
             properties: {
-                filtersReady: {
-                    type: Boolean
-                },
                 data: {
                     type: Object,
-                    value: null
+                    observer: "dataChanged"
                 },
                 columns: {
-                    type: Array,
-                    value: []
+                    type: Array
                 },
                 rows: {
-                    type: Array,
-                    value: []
+                    type: Array
+                },
+                tableWidth: {
+                    type: Number,
+                    value: 0
                 }
             },
 
             /* Computations */
 
             /* Observers */
-            observers: [
-                "queryReports(reportId, filter, offset, limit, fromDate, toDate, filtersReady)"
-            ],
-
-            _hasNext: function (data) {
-                return data != null && data.nextOffset > data.offset;
-            },
-            _hasPrevious: function (data) {
-                return data != null && data.previousOffset < data.offset;
-            },
-
-            _getEnd: function (data) {
-                if (this._hasNext(data)) return data.nextOffset;
-                return data == null ? 0 : data.size;
-            },
-
-            _getSize: function (data) {
-                return data == null || data.size >= 2147483647 ? this.localize('unknown') : data.size;
-            },
-
-            _toFirstPage: function () {
-                this.offset = 0;
-            },
-            _toPreviousPage: function () {
-                this.offset = this.data.previousOffset;
-            },
-            _toNextPage: function () {
-                if (this.data.size >= 2147483647) {
-                    this.offset = this.data.offset + this.data.limit;
-                } else {
-                    this.offset = this.data.nextOffset;
-                }
-            },
-            _toLastPage: function () {
-                this.offset = this.data.lastOffset;
-            },
-
-            setLimit: function (evt) {
-                this.limit = Number.parseInt(evt.target.textContent.trim());
-            },
-
-            onAjaxErrorCustom: function (e) {
-                this.onAjaxError(e);
-                this.fire('ajax-running', {running: false});
-            },
-
-            queryReports: function (reportId, filter, offset, limit, fromDate, toDate, filtersReady) {
-                if (!filtersReady)
-                    return;
-
-                var from = fromDate == null || Strolch.isEmptyString(fromDate) ? null : new Date(fromDate).toISOString();
-                var to = toDate == null || Strolch.isEmptyString(toDate) ? null : new Date(toDate).toISOString();
-
-                this.$.ajaxPostReport.body = {
-                    filter: filter,
-                    offset: offset,
-                    limit: limit,
-                    dateRange: {
-                        from: from,
-                        to: to
-                    }
-                };
-                this.$.ajaxPostReport.generateRequest();
-                this.fire('ajax-running', {running: true});
-            },
+            observers: [],
 
             /* Listeners */
             listeners: {},
-            onPostReportResponse: function (event) {
-                if (this.selectedRow != null) {
-                    this.selectedRow.classList.remove('selected');
-                    this.selectedRow = null;
-                }
-
-                // get the response
-                var response = event.detail.response;
-
-                // sort the columns by index
-                response.data.columns.sort(function (columnA, columnB) {
-                    return columnA.index - columnB.index;
-                });
-
-                // set the table width according to the column count // TODO should be solved via CSS
-                var columnCount = response.data.columns.length;
-                this.$.content.style.width = "calc(148px * " + columnCount + ")";
-
-                // directly set this as the columns and rows
-                this.set("data", response.data);
-                this.set("columns", response.data.columns);
-                this.set("rows", response.data.rows);
-
-                this.fire('ajax-running', {running: false});
-            },
 
             /* Private */
             onRowTapped: function (evt) {
-                if (this.selectedRow != null) {
+                if (this.selectedRow != null)
                     this.selectedRow.classList.remove('selected');
-                }
-                this.selectedRow = evt.target.closest('.table-row');
+                this.selectedRow = evt.target.closest('.content-row');
                 this.selectedRow.classList.add('selected');
+            },
+
+            dataChanged: function (newValue) {
+                if (this.selectedRow != null)
+                    this.selectedRow.classList.remove('selected');
+
+                if (newValue == null) {
+                    this.rows = null;
+                    this.columns = null;
+                    return;
+                }
+
+                var localize = this.localize;
+                newValue.rows.forEach(function (row) {
+                    if (row == null)
+                        return;
+                    newValue.columns.forEach(function (col) {
+                        if (col.name == null || col.name.length === 0 || col.id == null || row[col.id] == null)
+                            return;
+                        if (col.width == null)
+                            col.width = localize == null ? 100 : localize(col.name).length * 8;
+
+                        var width = row[col.id].length * 8;
+                        col.width = Math.min(250, Math.max(col.width, width));
+                    }.bind(this));
+                });
+
+                var tableWidth = 0;
+                newValue.columns.forEach(function (col) {
+                    tableWidth += col.width + 48;
+                });
+
+                console.log("dataChanged");
+                this.tableWidth = tableWidth;
+                this.columns = newValue.columns;
+                this.rows = newValue.rows;
             },
 
             /* Public */
             getCellProperty: function (row, column) {
-                // TODO check the property type
+                if (row == null || column == null)
+                    return "";
                 return row[column.id] ? row[column.id] : "";
-            },
-            refreshReports: function () {
-                this.$.ajaxPostReport.generateRequest();
-                this.fire('ajax-running', {running: true});
             }
         });
     </script>
