@@ -252,7 +252,7 @@
                 if (newValue != null && oldValue != null) {
                     this.$.ajaxGetFields.params = {
                         query: newValue,
-                        limit: this.facetLimit
+                        limit: 10
                     };
                     this.$.ajaxGetFields.generateRequest();
                 }

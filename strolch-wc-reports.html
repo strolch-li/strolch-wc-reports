@@ -34,7 +34,7 @@
             @media screen {
                 :host {
                     --box-space: 12px;
-                    --facet-width-opened: 300px;
+                    --facet-width-opened: 350px;
                     --facet-width-closed: 22px;
                     --facet-width: var(--facet-width-opened);
                     --table-width: calc(100vw - var(--facet-width) - 30px);
@@ -60,7 +60,7 @@
 
                 #actionBar {
                     @apply(--layout-horizontal);
-                    width: 100%;
+                    width: calc(100vw - 30px);
                     padding: 0 12px;
                     background-color: white;
                 }
@@ -116,10 +116,12 @@
                     flex-shrink: 0;
                     margin-left: 10px;
                     margin-right: calc(var(--box-space) * 0.5);
+                    height: calc(100vh - 140px);
+                    overflow: auto;
                 }
 
                 strolch-wc-reports-facet {
-                    width: 300px;
+                    width: calc(var(--facet-width) - 20px);
                 }
 
                 #facetContainer > strolch-wc-reports-facet:not(:last-of-type) {
@@ -131,7 +133,7 @@
                 }
 
                 strolch-wc-reports-table {
-                    height: calc(100vh - 190px);
+                    height: calc(100vh - 195px);
                     width: var(--table-width);
                 }
 
@@ -222,6 +224,10 @@
 
                 .limitBtn {
                     min-width: inherit;
+                }
+
+                .bold {
+                    font-weight: bold;
                 }
             }
         </style>
@@ -354,12 +360,15 @@
                                                   data="[[data]]"></strolch-wc-reports-table>
 
 
-                        <template is="dom-if" if="[[arrayFilled(data.rows)]]">
+                        <template is="dom-if" if="[[data]]">
                             <div class="footer noprint">
                                 <div>
-                                    <paper-button class="limitBtn" on-tap="setLimit">25</paper-button>
-                                    <paper-button class="limitBtn" on-tap="setLimit">50</paper-button>
-                                    <paper-button class="limitBtn" on-tap="setLimit">100</paper-button>
+                                    <paper-button class$="[[getLimitBtnClass(25, data.limit)]]" on-tap="setLimit">25
+                                    </paper-button>
+                                    <paper-button class$="[[getLimitBtnClass(50, data.limit)]]" on-tap="setLimit">50
+                                    </paper-button>
+                                    <paper-button class$="[[getLimitBtnClass(100, data.limit)]]" on-tap="setLimit">100
+                                    </paper-button>
                                 </div>
                                 <div>
                                     <div class="g-center">
@@ -373,7 +382,7 @@
                                     </div>
                                 </div>
                                 <div>
-                                    <p>[[localize('duration')]] [[data.duration]]</p>
+                                    <p>[[localize('duration')]] [[data.duration]] / [[_getParallel(data.parallel)]]</p>
                                 </div>
                             </div>
                         </template>
@@ -490,6 +499,12 @@
             },
 
             /* Computations */
+            getLimitBtnClass: function (expected, actual) {
+                return expected !== actual ? "limitBtn" : "limitBtn bold";
+            },
+            _getParallel: function (parallel) {
+                return parallel === true ? "p" : "s"
+            },
 
             /* Observers */
             observers: [
@@ -616,12 +631,11 @@
             },
 
             _getEnd: function (data) {
-                if (this._hasNext(data)) return data.nextOffset;
-                return data == null ? 0 : data.size;
+                return data == null || data.rows == null ? 0 : data.offset + data.rows.length;
             },
 
             _getSize: function (data) {
-                return data == null || data.size >= 2147483647 ? this.localize('unknown') : data.size;
+                return data == null || data.size >= 2147483625 ? this.localize('unknown') : data.size;
             },
 
             _toFirstPage: function () {
@@ -633,27 +647,29 @@
                 this.queryReports();
             },
             _toNextPage: function () {
-                if (this.data.size >= 2147483647) {
-                    this.offset = this.data.offset + this.data.limit;
-                } else {
-                    this.offset = this.data.nextOffset;
-                }
-
+                if (this.data.rows.length < this.data.limit)
+                    return;
+                this.offset = this.data.offset + this.data.limit;
                 this.queryReports();
             },
             _toLastPage: function () {
+                if (this.data.lastOffset >= 2147483625)
+                    return;
                 this.offset = this.data.lastOffset;
                 this.queryReports();
             },
 
             setLimit: function (evt) {
                 this.limit = Number.parseInt(evt.target.textContent.trim());
+                this.offset = 0;
                 this.queryReports();
             },
 
             filtersChanged: function (newValue) {
-                if (newValue != null)
+                if (newValue != null) {
+                    this.offset = 0;
                     this.queryReports();
+                }
             },
 
             queryReports: function () {
@@ -703,15 +719,18 @@
                 // clear the previous view
                 var restampTemplate = this.$.restampTemplate;
                 restampTemplate.if = false;
+                this.filtersReady = false;
+
+                this.data = null;
+                this.offset = 0;
                 this.allFilters = [];
                 this.facets = [];
 
                 // set the new report id
-                this.filtersReady = false;
                 var reportId = this.reports[this.selectedReportIndex].id;
                 this.reportId = reportId;
                 this.$.ajaxGetFacets.params = {
-                    limit: this.facetLimit
+                    limit: 10
                 };
                 this.$.ajaxGetFacets.generateRequest();
                 Strolch.setQueryParamValue("reportId", reportId);
