@@ -124,7 +124,7 @@
                     width: calc(var(--facet-width) - 20px);
                 }
 
-                #facetContainer > strolch-wc-reports-facet:not(:last-of-type) {
+                #facetContainer > strolch-wc-reports-facet:not(:last-child) {
                     margin-bottom: 16px;
                 }
 
@@ -228,6 +228,18 @@
 
                 .bold {
                     font-weight: bold;
+                }
+
+                paper-card {
+                    background-color: white;
+                    margin-right: 20px;
+                    padding-left: 10px;
+                    padding-right: 10px;
+                }
+
+                paper-input {
+                    display: inline-block;
+                    width: calc(100% - 45px);
                 }
             }
         </style>
@@ -352,6 +364,29 @@
                                                       facet-limit="[[facetLimit]]"
                                                       on-facet-loading="onFacetLoading"></strolch-wc-reports-facet>
                         </template>
+
+
+                        <paper-card raised>
+                            <template is="dom-if" if="[[arrayEmpty(facets)]]">
+                                <p><i>[[localize('noFacetsAvailable')]]</i></p>
+                            </template>
+                            <template is="dom-if" if="[[arrayFilled(facets)]]">
+                                <template is="dom-if" if="[[trimFacetValues]]">
+                                    <p><i>[[localize('facetsAreBeingTrimmed')]]</i></p>
+                                </template>
+                                <template is="dom-if" if="[[!trimFacetValues]]">
+                                    <paper-input required
+                                                 label="[[localize('facetLimit')]]"
+                                                 type="number"
+                                                 auto-validate
+                                                 min="1"
+                                                 max="100"
+                                                 value="{{facetLimit}}">
+                                    </paper-input>
+                                    <paper-icon-button icon="refresh" on-tap="reloadFacets"></paper-icon-button>
+                                </template>
+                            </template>
+                        </paper-card>
                     </div>
 
                     <div id="tableContainer">
@@ -429,6 +464,10 @@
                     value: true,
                     observer: 'showFacetsChanged'
                 },
+                trimFacetValues: {
+                    type: Boolean,
+                    value: false
+                },
                 facets: {
                     type: Array,
                     value: []
@@ -504,6 +543,12 @@
             },
             _getParallel: function (parallel) {
                 return parallel === true ? "p" : "s"
+            },
+            arrayEmpty: function (arr) {
+                return arr == null || arr.length === 0;
+            },
+            arrayFilled: function (arr) {
+                return !this.arrayEmpty(arr);
             },
 
             /* Observers */
@@ -727,13 +772,19 @@
                 this.facets = [];
 
                 // set the new report id
-                var reportId = this.reports[this.selectedReportIndex].id;
-                this.reportId = reportId;
-                this.$.ajaxGetFacets.params = {
-                    limit: 10
-                };
+                var report = this.reports[this.selectedReportIndex];
+                this.reportId = report.id;
+                this.trimFacetValues = report.trimFacetValues === true;
+                this.$.ajaxGetFacets.params.limit = this.facetLimit;
                 this.$.ajaxGetFacets.generateRequest();
-                Strolch.setQueryParamValue("reportId", reportId);
+                Strolch.setQueryParamValue("reportId", this.reportId);
+            },
+
+            reloadFacets: function () {
+                if (Strolch.isInteger(this.facetLimit)) {
+                    this.$.ajaxGetFacets.params.limit = this.facetLimit;
+                    this.$.ajaxGetFacets.generateRequest();
+                }
             },
 
             onSelectionChanged: function (event) {
