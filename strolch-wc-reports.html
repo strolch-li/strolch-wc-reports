@@ -230,11 +230,8 @@
                     font-weight: bold;
                 }
 
-                paper-card {
-                    background-color: white;
-                    margin-right: 20px;
-                    padding-left: 10px;
-                    padding-right: 10px;
+                .facetInfo {
+                    margin: 0 auto 16px;
                 }
 
                 paper-input {
@@ -353,6 +350,14 @@
                          hidden$="[[!showFacets]]"
                          restamp>
                         <paper-icon-button icon="chevron-left" on-tap="onToggleShowFacets"></paper-icon-button>
+
+                        <template is="dom-if" if="[[arrayEmpty(facets)]]">
+                            <p class="facetInfo"><i>[[localize('noFacetsAvailable')]]</i></p>
+                        </template>
+                        <template is="dom-if" if="[[arrayFilled(facets)]]">
+                            <p class="facetInfo"><i>[[localize('showingMaxNrOfFacets', 'facets', facetLimit)]]</i></p>
+                        </template>
+
                         <template is="dom-repeat" items="[[facets]]" as="facet">
                             <strolch-wc-reports-facet base-path="[[basePath]]"
                                                       base-rest-path="[[baseRestPath]]"
@@ -364,29 +369,6 @@
                                                       facet-limit="[[facetLimit]]"
                                                       on-facet-loading="onFacetLoading"></strolch-wc-reports-facet>
                         </template>
-
-
-                        <paper-card raised>
-                            <template is="dom-if" if="[[arrayEmpty(facets)]]">
-                                <p><i>[[localize('noFacetsAvailable')]]</i></p>
-                            </template>
-                            <template is="dom-if" if="[[arrayFilled(facets)]]">
-                                <template is="dom-if" if="[[trimFacetValues]]">
-                                    <p><i>[[localize('facetsAreBeingTrimmed')]]</i></p>
-                                </template>
-                                <template is="dom-if" if="[[!trimFacetValues]]">
-                                    <paper-input required
-                                                 label="[[localize('facetLimit')]]"
-                                                 type="number"
-                                                 auto-validate
-                                                 min="1"
-                                                 max="100"
-                                                 value="{{facetLimit}}">
-                                    </paper-input>
-                                    <paper-icon-button icon="refresh" on-tap="reloadFacets"></paper-icon-button>
-                                </template>
-                            </template>
-                        </paper-card>
                     </div>
 
                     <div id="tableContainer">
@@ -464,8 +446,8 @@
                     value: true,
                     observer: 'showFacetsChanged'
                 },
-                trimFacetValues: {
-                    type: Boolean,
+                maxRowsForFacetGeneration: {
+                    type: Number,
                     value: false
                 },
                 facets: {
@@ -774,7 +756,11 @@
                 // set the new report id
                 var report = this.reports[this.selectedReportIndex];
                 this.reportId = report.id;
-                this.trimFacetValues = report.trimFacetValues === true;
+                var maxRowsForFacetGeneration = report.maxRowsForFacetGeneration;
+                if (!Strolch.isInteger(maxRowsForFacetGeneration))
+                    this.maxRowsForFacetGeneration = -1;
+                else
+                    this.maxRowsForFacetGeneration = maxRowsForFacetGeneration;
                 this.$.ajaxGetFacets.params.limit = this.facetLimit;
                 this.$.ajaxGetFacets.generateRequest();
                 Strolch.setQueryParamValue("reportId", this.reportId);
