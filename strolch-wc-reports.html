@@ -146,7 +146,7 @@
                     justify-content: space-between;
                 }
 
-                .footer p {
+                .footer p, .duration {
                     color: #b5b5b5;
                 }
 
@@ -242,38 +242,14 @@
         </style>
 
         <!-- Requests -->
-        <iron-ajax id="ajaxGetReports"
-                   url="[[baseRestPath]]/strolch/reports"
-                   content-type="application/json"
-                   handle-as="json"
-                   method="GET"
-                   on-response="onGetReportResponse"
-                   on-error="onAjaxError"
-                   loading="{{loadingGetReports}}"></iron-ajax>
-        <iron-ajax id="ajaxGetFacets"
-                   url="[[baseRestPath]]/strolch/reports/[[reportId]]/facets"
-                   content-type="application/json"
-                   handle-as="json"
-                   method="GET"
-                   on-response="onGetFacetResponse"
-                   on-error="onAjaxError"
-                   loading="{{loadingGetFacets}}"></iron-ajax>
-        <iron-ajax id="ajaxPostCsv"
-                   url="[[baseRestPath]]/strolch/reports/[[reportId]]/csv"
-                   content-type="application/json"
-                   handle-as="text"
-                   method="POST"
-                   on-response="onPostCsvResponse"
-                   on-error="onAjaxError"
-                   loading="{{loadingPostCsv}}"></iron-ajax>
-        <iron-ajax id="ajaxPostReport"
-                   url="[[baseRestPath]]/strolch/reports/[[reportId]]"
-                   content-type="application/json"
-                   handle-as="json"
-                   method="POST"
-                   on-response="onPostReportResponse"
-                   on-error="onAjaxError"
-                   loading="{{loadingPostReport}}"></iron-ajax>
+        <iron-ajax id="ajaxGetReports" url="[[baseRestPath]]/strolch/reports" content-type="application/json" handle-as="json" method="GET"
+                   on-response="onGetReportResponse" on-error="onAjaxError" loading="{{loadingGetReports}}"></iron-ajax>
+        <iron-ajax id="ajaxGetFacets" url="[[baseRestPath]]/strolch/reports/[[reportId]]/facets" content-type="application/json" handle-as="json" method="GET"
+                   on-response="onGetFacetResponse" on-error="onAjaxError" loading="{{loadingGetFacets}}"></iron-ajax>
+        <iron-ajax id="ajaxPostCsv" url="[[baseRestPath]]/strolch/reports/[[reportId]]/csv" content-type="application/json" handle-as="text" method="POST"
+                   on-response="onPostCsvResponse" on-error="onAjaxError" loading="{{loadingPostCsv}}"></iron-ajax>
+        <iron-ajax id="ajaxPostReport" url="[[baseRestPath]]/strolch/reports/[[reportId]]" content-type="application/json" handle-as="json" method="POST"
+                   on-response="onPostReportResponse" on-error="onAjaxError" loading="{{loadingPostReport}}"></iron-ajax>
 
         <!-- Content -->
         <div class="overlay-loading" hidden$="[[hideOverlay]]">
@@ -285,9 +261,7 @@
                 <paper-material id="actionBar">
 
                     <paper-dropdown-menu label="[[localize('reportType')]]">
-                        <paper-listbox class="dropdown-content"
-                                       selected="{{selectedReportIndex}}"
-                                       on-iron-select="onReportSelected">
+                        <paper-listbox class="dropdown-content" selected="{{selectedReportIndex}}" on-iron-select="onReportSelected">
                             <template is="dom-repeat" items="[[reports]]" as="report">
                                 <paper-item class="dropdown-item">[[localize(report.name)]]</paper-item>
                             </template>
@@ -296,15 +270,8 @@
 
                     <template is="dom-if" if="[[reportId]]">
                         <div id="dateContainer">
-
-                            <vaadin-date-picker label="[[localize('From')]]"
-                                                value="{{fromDate}}"
-                                                i18n="{{vaadinI18n}}"></vaadin-date-picker>
-
-
-                            <vaadin-date-picker label="[[localize('To')]]"
-                                                value="{{toDate}}"
-                                                i18n="{{vaadinI18n}}"></vaadin-date-picker>
+                            <vaadin-date-picker label="[[localize('From')]]" value="{{fromDate}}" i18n="{{vaadinI18n}}"></vaadin-date-picker>
+                            <vaadin-date-picker label="[[localize('To')]]" value="{{toDate}}" i18n="{{vaadinI18n}}"></vaadin-date-picker>
                         </div>
                     </template>
 
@@ -317,17 +284,10 @@
                             <iron-icon icon="print"></iron-icon>
                             {{localize('buttonPrintLabel')}}
                         </paper-button>
-                        <paper-icon-button id="refreshButton"
-                                           on-tap="onRefreshTapped"
-                                           icon="refresh"
-                                           disabled$="[[!reportId]]"></paper-icon-button>
+                        <paper-icon-button id="refreshButton" on-tap="onRefreshTapped" icon="refresh" disabled$="[[!reportId]]"></paper-icon-button>
                     </div>
-                    <paper-tooltip for="exportButton" position="top" offset="4">
-                        {{localize('buttonExportDesc')}}
-                    </paper-tooltip>
-                    <paper-tooltip for="refreshButton" position="top" offset="4">
-                        {{localize('refreshView')}}
-                    </paper-tooltip>
+                    <paper-tooltip for="exportButton" position="top" offset="4">{{localize('buttonExportDesc')}}</paper-tooltip>
+                    <paper-tooltip for="refreshButton" position="top" offset="4">{{localize('refreshView')}}</paper-tooltip>
 
                 </paper-material>
             </div>
@@ -343,19 +303,20 @@
                         </div>
                     </template>
 
-                    <div id="facetContainer"
-                         class="light-border noprint"
-                         on-iron-select="onSelectionChanged"
-                         on-iron-deselect="onSelectionChanged"
-                         hidden$="[[!showFacets]]"
-                         restamp>
+                    <div id="facetContainer" class="light-border noprint" on-iron-select="onSelectionChanged" on-iron-deselect="onSelectionChanged"
+                         hidden$="[[!showFacets]]" restamp>
                         <paper-icon-button icon="chevron-left" on-tap="onToggleShowFacets"></paper-icon-button>
 
                         <template is="dom-if" if="[[arrayEmpty(facets)]]">
                             <p class="facetInfo"><i>[[localize('noFacetsAvailable')]]</i></p>
                         </template>
                         <template is="dom-if" if="[[arrayFilled(facets)]]">
-                            <p class="facetInfo"><i>[[localize('showingMaxNrOfFacets', 'facets', facetLimit)]]</i></p>
+                            <template is="dom-if" if="[[areRowFacetsLimited]]">
+                                <p class="facetInfo"><i>[[localize('facetsAreBeingTrimmed')]]</i></p>
+                            </template>
+                            <template is="dom-if" if="[[!areRowFacetsLimited]]">
+                                <p class="facetInfo"><i>[[localize('showingMaxNrOfFacets', 'facets', maxFacetValues)]]</i></p>
+                            </template>
                         </template>
 
                         <template is="dom-repeat" items="[[facets]]" as="facet">
@@ -366,9 +327,11 @@
                                                       facet-id="[[facet.type]]"
                                                       fields="[[facet.values]]"
                                                       filter="[[allFilters]]"
-                                                      facet-limit="[[facetLimit]]"
+                                                      facet-limit="[[maxFacetValues]]"
                                                       on-facet-loading="onFacetLoading"></strolch-wc-reports-facet>
                         </template>
+
+                        <p class="facetInfo duration"><i>[[localize('duration')]] [[facetLoadDuration]]</i></p>
                     </div>
 
                     <div id="tableContainer">
@@ -376,25 +339,19 @@
                                                   locales-path="[[localesPath]]"
                                                   data="[[data]]"></strolch-wc-reports-table>
 
-
                         <template is="dom-if" if="[[data]]">
                             <div class="footer noprint">
                                 <div>
-                                    <paper-button class$="[[getLimitBtnClass(25, data.limit)]]" on-tap="setLimit">25
-                                    </paper-button>
-                                    <paper-button class$="[[getLimitBtnClass(50, data.limit)]]" on-tap="setLimit">50
-                                    </paper-button>
-                                    <paper-button class$="[[getLimitBtnClass(100, data.limit)]]" on-tap="setLimit">100
-                                    </paper-button>
+                                    <paper-button class$="[[getLimitBtnClass(25, data.limit)]]" on-tap="setLimit">25</paper-button>
+                                    <paper-button class$="[[getLimitBtnClass(50, data.limit)]]" on-tap="setLimit">50</paper-button>
+                                    <paper-button class$="[[getLimitBtnClass(100, data.limit)]]" on-tap="setLimit">100</paper-button>
                                 </div>
                                 <div>
                                     <div class="g-center">
                                         <paper-icon-button icon="first-page" on-tap="_toFirstPage"></paper-icon-button>
-                                        <paper-icon-button icon="chevron-left"
-                                                           on-tap="_toPreviousPage"></paper-icon-button>
+                                        <paper-icon-button icon="chevron-left" on-tap="_toPreviousPage"></paper-icon-button>
                                         <span>[[data.offset]] [[localize('to')]] [[_getEnd(data)]] [[localize('of')]] [[_getSize(data)]]</span>
-                                        <paper-icon-button icon="chevron-right"
-                                                           on-tap="_toNextPage"></paper-icon-button>
+                                        <paper-icon-button icon="chevron-right" on-tap="_toNextPage"></paper-icon-button>
                                         <paper-icon-button icon="last-page" on-tap="_toLastPage"></paper-icon-button>
                                     </div>
                                 </div>
@@ -446,9 +403,19 @@
                     value: true,
                     observer: 'showFacetsChanged'
                 },
+                facetLimit: {
+                    type: Number
+                },
+                maxFacetValues: {
+                    type: Number
+                },
                 maxRowsForFacetGeneration: {
                     type: Number,
                     value: false
+                },
+                areRowFacetsLimited: {
+                    type: Boolean,
+                    computed: "computeAreRowFacetsLimited(maxRowsForFacetGeneration)"
                 },
                 facets: {
                     type: Array,
@@ -520,6 +487,9 @@
             },
 
             /* Computations */
+            computeAreRowFacetsLimited: function (maxRowsForFacetGeneration) {
+                return maxRowsForFacetGeneration > 0;
+            },
             getLimitBtnClass: function (expected, actual) {
                 return expected !== actual ? "limitBtn" : "limitBtn bold";
             },
@@ -531,6 +501,9 @@
             },
             arrayFilled: function (arr) {
                 return !this.arrayEmpty(arr);
+            },
+            greater: function (v1, v2) {
+                return v1 > v2;
             },
 
             /* Observers */
@@ -615,10 +588,16 @@
                 if (this.reportToLoad != null) {
                     for (var i = 0; i < this.reports.length; i++) {
                         if (this.reports[i].id === this.reportToLoad) {
-                            this.selectedReportIndex = i;
+                            if (this.selectedReportIndex === i)
+                                this.onReportSelected();
+                            else {
+                                this.selectedReportIndex = i;
+                            }
                             break;
                         }
                     }
+
+                    this.reportToLoad = null;
                 }
 
                 this.hideLoadingOverlay();
@@ -635,9 +614,11 @@
                 // remove all filters
                 this.allFilters = [];
 
+                this.facetLoadDuration = response.data.duration;
+
                 // directly set this as the available facets
-                this.facets = response.data;
-                if (response.data.length === 0) {
+                this.facets = response.data.facets;
+                if (this.facets.length === 0) {
                     this.showFacets = false;
                 }
 
@@ -756,21 +737,15 @@
                 // set the new report id
                 var report = this.reports[this.selectedReportIndex];
                 this.reportId = report.id;
-                var maxRowsForFacetGeneration = report.maxRowsForFacetGeneration;
-                if (!Strolch.isInteger(maxRowsForFacetGeneration))
-                    this.maxRowsForFacetGeneration = -1;
-                else
-                    this.maxRowsForFacetGeneration = maxRowsForFacetGeneration;
-                this.$.ajaxGetFacets.params.limit = this.facetLimit;
-                this.$.ajaxGetFacets.generateRequest();
-                Strolch.setQueryParamValue("reportId", this.reportId);
-            },
 
-            reloadFacets: function () {
-                if (Strolch.isInteger(this.facetLimit)) {
-                    this.$.ajaxGetFacets.params.limit = this.facetLimit;
+                this.maxRowsForFacetGeneration = report.maxRowsForFacetGeneration ? report.maxRowsForFacetGeneration : -1;
+                this.maxFacetValues = report.maxFacetValues ? report.maxFacetValues : this.facetLimit;
+
+                this.$.ajaxGetFacets.params.limit = this.maxFacetValues;
+                Strolch.setQueryParamValue("reportId", this.reportId);
+                this.async(function () {
                     this.$.ajaxGetFacets.generateRequest();
-                }
+                }, 10);
             },
 
             onSelectionChanged: function (event) {
@@ -797,7 +772,11 @@
             },
 
             onRefreshTapped: function (event) {
-                this.$.ajaxPostReport.generateRequest();
+                var reportId = Strolch.getQueryParamValue("reportId");
+                if (reportId != null && reportId !== "") {
+                    this.reportToLoad = reportId;
+                }
+                this.$.ajaxGetReports.generateRequest();
             },
 
             onPrintTapped: function (elem) {
@@ -806,7 +785,7 @@
             },
 
             reload: function () {
-                this.$.ajaxGetReports.generateRequest();
+                this.onRefreshTapped();
             },
 
             /* Private */

@@ -1,7 +1,7 @@
 {
   "name": "strolch-wc-reports",
   "description": "Strolch WebComponent Reports",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "authors": [
     "Robert von Burg"
   ],
