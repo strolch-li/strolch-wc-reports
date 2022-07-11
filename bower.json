@@ -1,7 +1,7 @@
 {
   "name": "strolch-wc-reports",
   "description": "Strolch WebComponent Reports",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "authors": [
     "Robert von Burg"
   ],
@@ -19,11 +19,11 @@
   "homepage": "https://github.com/strolch-li/strolch-wc-reports",
   "ignore": [],
   "dependencies": {
-    "strolchjs": "strolch-li/strolchjs#^0.5.1",
-    "strolch-wc-styles": "strolch-li/strolch-wc-styles#^0.4.4",
+    "strolchjs": "strolch-li/strolchjs#^0.5.3",
+    "strolch-wc-styles": "strolch-li/strolch-wc-styles#^0.4.7",
     "strolch-wc-badge": "strolch-li/strolch-wc-badge#^0.1.4",
-    "strolch-wc-debounced-input": "strolch-li/strolch-wc-debounced-input#^0.1.3",
-    "strolch-wc-localize-behavior": "strolch-li/strolch-wc-localize-behavior#^1.1.14",
+    "strolch-wc-debounced-input": "strolch-li/strolch-wc-debounced-input#^0.1.5",
+    "strolch-wc-localize-behavior": "strolch-li/strolch-wc-localize-behavior#^1.1.15",
 
     "polymer": "Polymer/polymer#^1.12.0",
 
