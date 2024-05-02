@@ -235,6 +235,9 @@
                     value: [],
                     notify: true
                 },
+                facetLimit: {
+                    type: Number
+                },
                 facetLoading: {
                     type: Boolean,
                     value: false,
@@ -252,7 +255,7 @@
                 if (newValue != null && oldValue != null) {
                     this.$.ajaxGetFields.params = {
                         query: newValue,
-                        limit: 10
+                        limit: this.facetLimit
                     };
                     this.$.ajaxGetFields.generateRequest();
                 }
