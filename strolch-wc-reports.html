@@ -242,14 +242,19 @@
         </style>
 
         <!-- Requests -->
-        <iron-ajax id="ajaxGetReports" url="[[baseRestPath]]/strolch/reports" content-type="application/json" handle-as="json" method="GET"
+        <iron-ajax id="ajaxGetReports" url="[[baseRestPath]]/strolch/reports" content-type="application/json"
+                   handle-as="json" method="GET"
                    on-response="onGetReportResponse" on-error="onAjaxError" loading="{{loadingGetReports}}"></iron-ajax>
-        <iron-ajax id="ajaxGetFacets" url="[[baseRestPath]]/strolch/reports/[[reportId]]/facets" content-type="application/json" handle-as="json" method="GET"
+        <iron-ajax id="ajaxGetFacets" url="[[baseRestPath]]/strolch/reports/[[reportId]]/facets"
+                   content-type="application/json" handle-as="json" method="GET"
                    on-response="onGetFacetResponse" on-error="onAjaxError" loading="{{loadingGetFacets}}"></iron-ajax>
-        <iron-ajax id="ajaxPostCsv" url="[[baseRestPath]]/strolch/reports/[[reportId]]/csv" content-type="application/json" handle-as="text" method="POST"
+        <iron-ajax id="ajaxPostCsv" url="[[baseRestPath]]/strolch/reports/[[reportId]]/csv"
+                   content-type="application/json" handle-as="blob" method="POST"
                    on-response="onPostCsvResponse" on-error="onAjaxError" loading="{{loadingPostCsv}}"></iron-ajax>
-        <iron-ajax id="ajaxPostReport" url="[[baseRestPath]]/strolch/reports/[[reportId]]" content-type="application/json" handle-as="json" method="POST"
-                   on-response="onPostReportResponse" on-error="onAjaxError" loading="{{loadingPostReport}}"></iron-ajax>
+        <iron-ajax id="ajaxPostReport" url="[[baseRestPath]]/strolch/reports/[[reportId]]"
+                   content-type="application/json" handle-as="json" method="POST"
+                   on-response="onPostReportResponse" on-error="onAjaxError"
+                   loading="{{loadingPostReport}}"></iron-ajax>
 
         <!-- Content -->
         <div class="overlay-loading" hidden$="[[hideOverlay]]">
@@ -261,7 +266,8 @@
                 <paper-material id="actionBar">
 
                     <paper-dropdown-menu label="[[localize('reportType')]]">
-                        <paper-listbox class="dropdown-content" selected="{{selectedReportIndex}}" on-iron-select="onReportSelected">
+                        <paper-listbox class="dropdown-content" selected="{{selectedReportIndex}}"
+                                       on-iron-select="onReportSelected">
                             <template is="dom-repeat" items="[[reports]]" as="report">
                                 <paper-item class="dropdown-item">[[localize(report.name)]]</paper-item>
                             </template>
@@ -270,8 +276,10 @@
 
                     <template is="dom-if" if="[[reportId]]">
                         <div id="dateContainer">
-                            <vaadin-date-picker label="[[localize('From')]]" value="{{fromDate}}" i18n="{{vaadinI18n}}"></vaadin-date-picker>
-                            <vaadin-date-picker label="[[localize('To')]]" value="{{toDate}}" i18n="{{vaadinI18n}}"></vaadin-date-picker>
+                            <vaadin-date-picker label="[[localize('From')]]" value="{{fromDate}}"
+                                                i18n="{{vaadinI18n}}"></vaadin-date-picker>
+                            <vaadin-date-picker label="[[localize('To')]]" value="{{toDate}}"
+                                                i18n="{{vaadinI18n}}"></vaadin-date-picker>
                         </div>
                     </template>
 
@@ -284,10 +292,13 @@
                             <iron-icon icon="print"></iron-icon>
                             {{localize('buttonPrintLabel')}}
                         </paper-button>
-                        <paper-icon-button id="refreshButton" on-tap="onRefreshTapped" icon="refresh" disabled$="[[!reportId]]"></paper-icon-button>
+                        <paper-icon-button id="refreshButton" on-tap="onRefreshTapped" icon="refresh"
+                                           disabled$="[[!reportId]]"></paper-icon-button>
                     </div>
-                    <paper-tooltip for="exportButton" position="top" offset="4">{{localize('buttonExportDesc')}}</paper-tooltip>
-                    <paper-tooltip for="refreshButton" position="top" offset="4">{{localize('refreshView')}}</paper-tooltip>
+                    <paper-tooltip for="exportButton" position="top" offset="4">{{localize('buttonExportDesc')}}
+                    </paper-tooltip>
+                    <paper-tooltip for="refreshButton" position="top" offset="4">{{localize('refreshView')}}
+                    </paper-tooltip>
 
                 </paper-material>
             </div>
@@ -303,7 +314,8 @@
                         </div>
                     </template>
 
-                    <div id="facetContainer" class="light-border noprint" on-iron-select="onSelectionChanged" on-iron-deselect="onSelectionChanged"
+                    <div id="facetContainer" class="light-border noprint" on-iron-select="onSelectionChanged"
+                         on-iron-deselect="onSelectionChanged"
                          hidden$="[[!showFacets]]" restamp>
                         <paper-icon-button icon="chevron-left" on-tap="onToggleShowFacets"></paper-icon-button>
 
@@ -315,7 +327,8 @@
                                 <p class="facetInfo"><i>[[localize('facetsAreBeingTrimmed')]]</i></p>
                             </template>
                             <template is="dom-if" if="[[!areRowFacetsLimited]]">
-                                <p class="facetInfo"><i>[[localize('showingMaxNrOfFacets', 'facets', maxFacetValues)]]</i></p>
+                                <p class="facetInfo"><i>[[localize('showingMaxNrOfFacets', 'facets',
+                                    maxFacetValues)]]</i></p>
                             </template>
                         </template>
 
@@ -342,16 +355,21 @@
                         <template is="dom-if" if="[[data]]">
                             <div class="footer noprint">
                                 <div>
-                                    <paper-button class$="[[getLimitBtnClass(25, data.limit)]]" on-tap="setLimit">25</paper-button>
-                                    <paper-button class$="[[getLimitBtnClass(50, data.limit)]]" on-tap="setLimit">50</paper-button>
-                                    <paper-button class$="[[getLimitBtnClass(100, data.limit)]]" on-tap="setLimit">100</paper-button>
+                                    <paper-button class$="[[getLimitBtnClass(25, data.limit)]]" on-tap="setLimit">25
+                                    </paper-button>
+                                    <paper-button class$="[[getLimitBtnClass(50, data.limit)]]" on-tap="setLimit">50
+                                    </paper-button>
+                                    <paper-button class$="[[getLimitBtnClass(100, data.limit)]]" on-tap="setLimit">100
+                                    </paper-button>
                                 </div>
                                 <div>
                                     <div class="g-center">
                                         <paper-icon-button icon="first-page" on-tap="_toFirstPage"></paper-icon-button>
-                                        <paper-icon-button icon="chevron-left" on-tap="_toPreviousPage"></paper-icon-button>
+                                        <paper-icon-button icon="chevron-left"
+                                                           on-tap="_toPreviousPage"></paper-icon-button>
                                         <span>[[data.offset]] [[localize('to')]] [[_getEnd(data)]] [[localize('of')]] [[_getSize(data)]]</span>
-                                        <paper-icon-button icon="chevron-right" on-tap="_toNextPage"></paper-icon-button>
+                                        <paper-icon-button icon="chevron-right"
+                                                           on-tap="_toNextPage"></paper-icon-button>
                                         <paper-icon-button icon="last-page" on-tap="_toLastPage"></paper-icon-button>
                                     </div>
                                 </div>
@@ -720,7 +738,7 @@
                 var response = event.detail.response;
                 console.log('Received CSV Result: 8');
                 var fileName = this.reportId + this.toDateTime(new Date()) + '.csv';
-                Strolch.handleAjaxFileDownload(response, fileName, 'text/csv');
+                Strolch.handleAjaxFileDownload(response, fileName, 'text/csv;charset=utf-8');
             },
 
             onReportSelected: function (event) {
