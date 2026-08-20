@@ -1,7 +1,7 @@
 {
   "name": "strolch-wc-reports",
   "description": "Strolch WebComponent Reports",
-  "version": "0.5.12",
+  "version": "0.5.13",
   "authors": [
     "Robert von Burg"
   ],
@@ -19,11 +19,11 @@
   "homepage": "https://github.com/strolch-li/strolch-wc-reports",
   "ignore": [],
   "dependencies": {
-    "strolchjs": "strolch-li/strolchjs#^0.5.7",
+    "strolchjs": "strolch-li/strolchjs#^0.5.8",
     "strolch-wc-styles": "strolch-li/strolch-wc-styles#^0.4.9",
     "strolch-wc-badge": "strolch-li/strolch-wc-badge#^0.1.4",
     "strolch-wc-debounced-input": "strolch-li/strolch-wc-debounced-input#^0.1.6",
-    "strolch-wc-localize-behavior": "strolch-li/strolch-wc-localize-behavior#^1.1.21",
+    "strolch-wc-localize-behavior": "strolch-li/strolch-wc-localize-behavior#^1.1.22",
     "polymer": "Polymer/polymer#^1.12.0",
     "iron-ajax": "PolymerElements/iron-ajax#^1.4.4",
     "iron-pages": "PolymerElements/iron-pages#^1.0.9",
@@ -49,6 +49,6 @@
     "paper-item": "PolymerElements/paper-item#^1.2.2"
   },
   "devDependencies": {
-    "strolch-wc-auth": "4treesCH/strolch-wc-auth#^0.11.5"
+    "strolch-wc-auth": "4treesCH/strolch-wc-auth#^0.11.6"
   }
 }
