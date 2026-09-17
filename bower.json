@@ -1,7 +1,7 @@
 {
   "name": "strolch-wc-reports",
   "description": "Strolch WebComponent Reports",
-  "version": "0.5.14",
+  "version": "0.5.15",
   "authors": [
     "Robert von Burg"
   ],
@@ -49,6 +49,6 @@
     "paper-item": "PolymerElements/paper-item#^1.2.2"
   },
   "devDependencies": {
-    "strolch-wc-auth": "4treesCH/strolch-wc-auth#^0.11.7"
+    "strolch-wc-auth": "4treesCH/strolch-wc-auth#^0.12.0"
   }
 }
