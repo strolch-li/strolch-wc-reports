@@ -1,7 +1,7 @@
 {
   "name": "strolch-wc-reports",
   "description": "Strolch WebComponent Reports",
-  "version": "0.5.17",
+  "version": "0.5.18",
   "authors": [
     "Robert von Burg"
   ],
@@ -20,10 +20,10 @@
   "ignore": [],
   "dependencies": {
     "strolchjs": "git@github.com:strolch-li/strolchjs#0.5.8",
-    "strolch-wc-styles": "git@github.com:strolch-li/strolch-wc-styles#0.4.9",
-    "strolch-wc-badge": "git@github.com:strolch-li/strolch-wc-badge#0.1.4",
-    "strolch-wc-debounced-input": "git@github.com:strolch-li/strolch-wc-debounced-input#0.1.6",
-    "strolch-wc-localize-behavior": "git@github.com:strolch-li/strolch-wc-localize-behavior#1.1.23",
+    "strolch-wc-styles": "git@github.com:strolch-li/strolch-wc-styles#0.4.10",
+    "strolch-wc-badge": "git@github.com:strolch-li/strolch-wc-badge#0.1.5",
+    "strolch-wc-debounced-input": "git@github.com:strolch-li/strolch-wc-debounced-input#0.1.7",
+    "strolch-wc-localize-behavior": "git@github.com:strolch-li/strolch-wc-localize-behavior#1.1.24",
     "polymer": "git@github.com:Polymer/polymer#1.12.0",
     "iron-ajax": "git@github.com:PolymerElements/iron-ajax#1.4.4",
     "iron-pages": "git@github.com:PolymerElements/iron-pages#1.0.9",
